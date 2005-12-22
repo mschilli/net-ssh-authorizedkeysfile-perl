@@ -1,0 +1,5 @@
+######################################################################
+Revision history for Perl extension Net::SSH::AuthorizedKeysFile
+
+0.01  2005/12/21
+      * Where it all began.
