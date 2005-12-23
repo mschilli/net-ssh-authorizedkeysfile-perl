@@ -6,7 +6,7 @@ use Log::Log4perl qw(:easy);
 use Text::ParseWords;
 use Net::SSH::AuthorizedKey;
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
  
 ###########################################
 sub new {
