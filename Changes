@@ -1,5 +1,9 @@
 ######################################################################
 Revision history for Perl extension Net::SSH::AuthorizedKeysFile
+######################################################################
+
+0.02  2005/12/23
+    (ms) Fixed dependencies
 
 0.01  2005/12/21
-      * Where it all began.
+    (ms) Where it all began.

@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
 
 our %VALID_KEYWORDS = (
     command               => "s",
