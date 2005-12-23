@@ -115,6 +115,18 @@ package Net::SSH::AuthorizedKey::SSH2;
 ###########################################
 use base qw(Net::SSH::AuthorizedKey);
 
+###########################################
+sub as_string {
+###########################################
+    my($self) = @_;
+
+    my $string = "";
+
+    $string .= " $self->{encryption} $self->{key} $self->{email}";
+
+    return $string;
+}
+
 1;
 
 __END__
@@ -165,19 +177,22 @@ Get/set an option. Note that options can be either binary or carry a string:
 
 =item C<option_delete>
 
-Remove an option completely.
+Remove an option completely. C<$ak-E<gt>option_delete("from")> will remove
+the C<from> option from the key meta info.
 
 =item C<type>
 
-Type of ssh key, either C<ssh-1> or C<ssh-2>.
+Type of ssh key, either C<"ssh-1"> or C<"ssh-2">.
 
 =item C<email>
 
-Email address of the person who created the key. (Different from "from" option).
+Email address of the person who created the key. (Different from 
+the "from" option).
 
 =item C<key>
 
-Public key.
+Public key, either a long number (ssh-1) or a line of alphanumeric
+characters.
 
 =item C<keylen>
 
@@ -188,6 +203,9 @@ Length of the key in bit (e.g. 1024).
 Two-digit number in front of the key in ssh-1 keys.
 
 =back
+
+Calling a method will return C<undef> if the corresponding entry doesn't
+exist in the key meta data.
 
 =head1 LEGALESE
 

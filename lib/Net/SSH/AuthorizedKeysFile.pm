@@ -46,6 +46,7 @@ sub read {
         chomp;
         my @words = parse_line(qr/[,\s]/, 0, $_);
 
+            # This should probably go into Net::SSH::AuthorizedKey::SSH[12]
         if(3 == scalar grep /^\d+$/, @words) {
             # ssh-1 key
             my($keylen, $exponent, $key, $email) = splice @words, -4;
@@ -119,9 +120,10 @@ Net::SSH::AuthorizedKeysFile - Read and modify ssh's authorized_keys files
 
     use Net::SSH::AuthorizedKeysFile;
 
+        # Reads $HOME/.ssh/authorized_keys by default
     my $akf = Net::SSH::AuthorizedKeysFile->new();
 
-        # Read entries:
+        # Iterate over entries
     for my $key ($akf->keys()) {
         print $key->keylen(), "\n";
     }
@@ -131,16 +133,15 @@ Net::SSH::AuthorizedKeysFile - Read and modify ssh's authorized_keys files
         $key->option("from", 'quack@quack.com');
         $key->keylen(1025);
     }
+        # Save changes back to $HOME/.ssh/authorized_keys
     $akf->save();
 
 =head1 DESCRIPTION
 
 Net::SSH::AuthorizedKeysFile reads and modifies C<authorized_keys> files.
 C<authorized_keys> files contain public keys and meta information to
-be used by C<ssh> on the remove host to let certain users in without 
+be used by C<ssh> on the remote host to let users in without 
 having to type their password.
-
-Limitation: C<ssh-2> keys are not fully implemented yet.
 
 =head1 METHODS
 
@@ -149,10 +150,11 @@ Limitation: C<ssh-2> keys are not fully implemented yet.
 =item C<new>
 
 Creates a new Net::SSH::AuthorizedKeysFile object and reads in the 
-authorized_keys file. Defaults to C<$HOME/.ssh/authorized_keys> unless
+authorized_keys file. The filename 
+defaults to C<$HOME/.ssh/authorized_keys> unless
 overridden with
 
-    Net::SSH::AuthorizedKeysFile->new( file => "other_authkeys_file" );
+    Net::SSH::AuthorizedKeysFile->new( file => "/path/other_authkeys_file" );
 
 =item C<keys>
 
@@ -161,8 +163,8 @@ L<Net::SSH::AuthorizedKey>.
 
 =item C<as_string>
 
-String representation of all keys, ultimately the content of a saved
-Net::SSH::AuthorizedKey object.
+String representation of all keys, ultimately the content that gets
+written out when calling the C<save()> method.
 
 =item C<save>
 
