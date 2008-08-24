@@ -1,69 +1,54 @@
 ######################################################################
-    Net::SSH::AuthorizedKey 0.02
+    Net::SSH::AuthorizedKeysFile 0.03
 ######################################################################
 
 NAME
-    Net::SSH::AuthorizedKey - Holds a single line of the authorized_keys
-    file
+    Net::SSH::AuthorizedKeysFile - Read and modify ssh's authorized_keys
+    files
 
 SYNOPSIS
-        use Net::SSH::AuthorizedKey;
+        use Net::SSH::AuthorizedKeysFile;
 
-        my $akf = Net::SSH::AuthorizedKey->new(
-            options  => { from => 'foo@bar.com', "no-agent-forwarding" },
-            key      => "123....890",
-            keylen   => 1024,
-            exponent => 35,
-            type     => "ssh-1",
-            email    => 'issuer@issuer.com',
-        );
+            # Reads $HOME/.ssh/authorized_keys by default
+        my $akf = Net::SSH::AuthorizedKeysFile->new();
+
+            # Iterate over entries
+        for my $key ($akf->keys()) {
+            print $key->keylen(), "\n";
+        }
+
+            # Modify entries:
+        for my $key ($akf->keys()) {
+            $key->option("from", 'quack@quack.com');
+            $key->keylen(1025);
+        }
+            # Save changes back to $HOME/.ssh/authorized_keys
+        $akf->save();
 
 DESCRIPTION
-    Net::SSH::AuthorizedKey objects holds key lines from ssh's
-    authorized_keys files. They just provide getter/setter methods.
+    Net::SSH::AuthorizedKeysFile reads and modifies "authorized_keys" files.
+    "authorized_keys" files contain public keys and meta information to be
+    used by "ssh" on the remote host to let users in without having to type
+    their password.
 
 METHODS
-    "option"
-        Get/set an option. Note that options can be either binary or carry a
-        string:
+    "new"
+        Creates a new Net::SSH::AuthorizedKeysFile object and reads in the
+        authorized_keys file. The filename defaults to
+        "$HOME/.ssh/authorized_keys" unless overridden with
 
-                # Set "no-agent-forwarding" option
-            $ak->option("no-agent-forwarding", 1);
+            Net::SSH::AuthorizedKeysFile->new( file => "/path/other_authkeys_file" );
 
-                # Check if no-agent-forwarding option is set
-            if($ak->option("no-agent-forwarding")) {
-                # ...
-            }
+    "keys"
+        Returns a list of Net::SSH::AuthorizedKey objects. Methods are
+        described in Net::SSH::AuthorizedKey.
 
-                # Set the from option to 'from="a@b.com"'
-            $ak->option(from => 'a@b.com');
+    "as_string"
+        String representation of all keys, ultimately the content that gets
+        written out when calling the "save()" method.
 
-                # Get the value of the 'from' option
-            my $val = $ak->option("from");
-
-    "option_delete"
-        Remove an option completely. "$ak->option_delete("from")" will
-        remove the "from" option from the key meta info.
-
-    "type"
-        Type of ssh key, either "ssh-1" or "ssh-2".
-
-    "email"
-        Email address of the person who created the key. (Different from the
-        "from" option).
-
-    "key"
-        Public key, either a long number (ssh-1) or a line of alphanumeric
-        characters.
-
-    "keylen"
-        Length of the key in bit (e.g. 1024).
-
-    "exponent"
-        Two-digit number in front of the key in ssh-1 keys.
-
-    Calling a method will return "undef" if the corresponding entry doesn't
-    exist in the key meta data.
+    "save"
+        Write changes back to the authorized_keys file.
 
 LEGALESE
     Copyright 2005 by Mike Schilli, all rights reserved. This program is
