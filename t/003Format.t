@@ -11,7 +11,7 @@ use File::Temp qw(tempfile);
 #use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init($DEBUG);
 
-use Test::More tests => 15;
+use Test::More tests => 17;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 
 my $tdir = "t";
@@ -66,3 +66,13 @@ my $ak3 = Net::SSH::AuthorizedKeysFile->new(file => $filename);
 
 is($keys[4]->option("command"), 'waah waah waah', 
    "read back option with blanks");
+
+# Comments with blanks
+$ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-comments.txt");
+@keys = $ak->keys();
+
+# Write option containing blank
+is($keys[1]->comment(), 
+  'Quack Schmack quack@schmack.com', "comments with blanks");
+is($keys[2]->comment(), 
+  'Quack Schmack, quack@schmack.com', "comments with commas");

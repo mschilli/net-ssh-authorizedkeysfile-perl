@@ -8,6 +8,8 @@ Revision history for Perl extension Net::SSH::AuthorizedKeysFile
     (ms) Ignore comment lines in authorized_keys files
     (ms) The 'email' field is now call 'comment' ('email' is still available 
          for backwards compatibility, though).
+    (ms) Comments can now contain blanks and commas without tripping the
+         parser up.
 
 0.02  2005/12/23
     (ms) Fixed dependencies
