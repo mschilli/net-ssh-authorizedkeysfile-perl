@@ -8,6 +8,9 @@ use strict;
 use Sysadm::Install qw(:all);
 use File::Temp qw(tempfile);
 
+#use Log::Log4perl qw(:easy);
+#Log::Log4perl->easy_init($DEBUG);
+
 use Test::More tests => 11;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 

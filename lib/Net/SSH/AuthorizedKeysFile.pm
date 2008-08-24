@@ -6,7 +6,10 @@ use Log::Log4perl qw(:easy);
 use Text::ParseWords;
 use Net::SSH::AuthorizedKey;
 
-our $VERSION = "0.02";
+our $VERSION = "0.03";
+
+my  $ssh2_regex = qr(^ssh-);
+my  $ssh1_regex = qr(^\d);
  
 ###########################################
 sub new {
@@ -39,25 +42,103 @@ sub read {
 ###########################################
     my($self) = @_;
 
+    my $has_options;
+    my $ssh_version;
+    my $line = 0;
+
     open FILE, "<$self->{file}" or LOGDIE "Cannot open $self->{file}";
 
     while(<FILE>) { 
 
         chomp;
-        my @words = parse_line(qr/[,\s]/, 0, $_);
+        s/^\s+//;     # Remove leading blanks
+        next if /^#/; # Ignore comment lines
 
-            # This should probably go into Net::SSH::AuthorizedKey::SSH[12]
-        if(3 == scalar grep /^\d+$/, @words) {
-            # ssh-1 key
-            my($keylen, $exponent, $key, $email) = splice @words, -4;
+        $line++;
 
-            my %options;
-            for my $option (@words) {
-                my($key, $value) = split /=/, $option;
+        # From the sshd manpage: 
+        # Protocol 1 public keys consist of the following space-separated
+        # fields: options, bits, exponent, modulus, comment. Protocol 2
+        # public key consist of: options, keytype, base64-encoded key,
+        # comment. The options field is optional; its presence is
+        # determined by whether the line starts with a number or not (the
+        # options field never starts with a number). The bits, exponent,
+        # modulus, and comment fields give the RSA key for protocol
+        # version 1; the comment field is not used for anything (but may
+        # be convenient for the user to identify the key). For protocol
+        # version 2 the keytype is "ssh-dss" or "ssh-rsa".
 
-                next unless defined $key;
-                $options{$key} = $value;
+        if( /$ssh2_regex/ ) {
+            DEBUG "$ssh2_regex matched";
+            $has_options = 0;
+        } elsif( /$ssh1_regex/ ) {
+            DEBUG "$ssh1_regex matched";
+            $has_options = 0;
+        } else {
+            DEBUG "Found options";
+            $has_options = 1;
+        }
+        
+        my @fields = parse_line(qr/\s+/, 1, $_);
+        DEBUG "Parsed fields: ", join(' ', map { "[$_]" } @fields);
+
+        my @options = ();
+        my %options = ();
+
+        if($has_options) {
+            my $options = shift @fields;
+            DEBUG "Parsing options: $options";
+            @options = parse_line(qr/,/, 0, $options);
+            DEBUG "Parsed options: ", join(' ', map { "[$_]" } @options);
+
+            for my $option (@options) {
+                my($key, $value) = split /=/, $option, 2;
+                $value = 1 unless defined $value;
+                $value =~ s/^"(.*)"$/$1/; # remove quotes
+
+                if(exists $options{$key}) {
+                    DEBUG "Option $key already set, adding [$value] to array";
+                    $options{$key} = [ $options{$key} ] if 
+                        ref($options{$key}) ne "ARRAY";
+                    push @{ $options{$key} }, $value;
+                } else {
+                    DEBUG "Setting option $key to $value";
+                    $options{$key} = $value;
+                }
             }
+        }
+
+        # since we kept the quotes, in all non-option fields, delete them
+        # here
+        for(@fields) {
+            s/^"(.*)"$/$1/;
+        }
+
+        my $line_ssh_version;
+        if($fields[0] =~ /$ssh1_regex/) {
+            $line_ssh_version = 1;
+        } elsif($fields[0] =~ /$ssh2_regex/) {
+            $line_ssh_version = 2;
+        } else {
+            DEBUG "Neither $ssh1_regex nor $ssh2_regex matched on '$fields[0]'";
+            LOGWARN "Invalid line in $self->{file}:$line: $_";
+            return undef;
+        }
+
+        if(defined $ssh_version) {
+            if($ssh_version != $line_ssh_version) {
+                LOGWARN "Switch from v$ssh_version to v$line_ssh_version ",
+                        "in $self->{file}:$line: $_";
+                return undef;
+            }
+        } else {
+            $ssh_version = $line_ssh_version;
+        }
+
+        if($ssh_version == 1) {
+            # ssh-1 key
+            my($keylen, $exponent, $key) = splice @fields, 0, 3;
+            my $comment = join ' ', @fields;
 
             DEBUG "Found $keylen bit ssh-1 key";
             push @{ $self->{keys} },
@@ -66,22 +147,28 @@ sub read {
                     key      => $key,
                     keylen   => $keylen,
                     exponent => $exponent,
-                    email    => $email,
+                    email    => $comment,
+                    comment  => $comment,
                     options  => \%options,
                  });
 
         } else {
             # ssh-2 key
-            my($encr, $key, $email) = @words;
+            DEBUG "Found ssh-2 key: [@fields]";
+            my($encr, $key) = splice @fields, 0, 2;
+            my $comment = join ' ', @fields;
+
             push @{ $self->{keys} },
                  Net::SSH::AuthorizedKey::SSH2->new({
                     type       => "ssh-2",
                     encryption => $encr,
                     key        => $key,
-                    email      => $email,
+                    email      => $comment,
+                    comment    => $comment,
+                    options    => \%options,
                  });
         }
-    }
+   }
 
     close FILE;
 }

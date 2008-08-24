@@ -2,7 +2,8 @@
 package Net::SSH::AuthorizedKey;
 ###########################################
 use base qw(Class::Accessor);
-__PACKAGE__->mk_accessors(qw(options key exponent keylen email type));
+__PACKAGE__->mk_accessors(qw(options key exponent keylen email type 
+                             comment encryption));
 
 use strict;
 use warnings;
@@ -15,6 +16,7 @@ our %VALID_KEYWORDS = (
     environment           => "s",
     from                  => "s",
     permitopen            => "s",
+    tunnel                => "n",
     "no-agent-forwarding" => 1,
     "no-port-forwarding"  => 1,
     "no-pty"              => 1,
@@ -36,7 +38,7 @@ sub option_type {
 ###########################################
     my($self, $key, $value) = @_;
 
-    if($self->{type} eq "ssh-1" and exists $VALID_KEYWORDS{$key}) {
+    if(exists $VALID_KEYWORDS{$key}) {
        return  $VALID_KEYWORDS{$key};
     } 
 
@@ -83,6 +85,39 @@ sub option_delete {
 }
 
 ###########################################
+sub options_as_string {
+###########################################
+    my($self) = @_;
+
+    my $string = "";
+    my @parts  = ();
+
+    for my $option ( keys %{ $self->{options} } ) {
+        if(defined $self->{options}->{$option}) {
+            if(ref($self->{options}->{$option}) eq "ARRAY") {
+                for (@{ $self->{options}->{$option} }) {
+                    push @parts, option_quote($option, $_);
+                }
+            } else {
+                push @parts, option_quote($option, $self->{options}->{$option});
+            }
+        } else {
+            push @parts, $option;
+        }
+    }
+    return join(',', @parts);
+}
+
+###########################################
+sub option_quote {
+###########################################
+    my($option, $text) = @_;
+
+    $text =~ s/([\\"])/\\$1/g;
+    return "$option=\"" . $text . "\"";
+}
+
+###########################################
 package Net::SSH::AuthorizedKey::SSH1;
 ###########################################
 use base qw(Net::SSH::AuthorizedKey);
@@ -92,20 +127,10 @@ sub as_string {
 ###########################################
     my($self) = @_;
 
-    my $string = "";
+    my $string = $self->options_as_string();
+    $string .= " " if length $string;
 
-    for my $option ( keys %{ $self->{options} } ) {
-        $string .= "," if length $string;
-
-        if(defined $self->{options}->{$option}) {
-            $self->{options}->{$option} =~ s/([\\"])/\\$1/g;
-            $string .= "$option=\"$self->{options}->{$option}\"";
-        } else {
-            $string .= $option;
-        }
-    }
-
-    $string .= " $self->{keylen} $self->{exponent} $self->{key} $self->{email}";
+    $string .= "$self->{keylen} $self->{exponent} $self->{key} $self->{email}";
 
     return $string;
 }
@@ -120,7 +145,8 @@ sub as_string {
 ###########################################
     my($self) = @_;
 
-    my $string = "";
+    my $string = $self->options_as_string();
+    $string .= " " if length $string;
 
     $string .= " $self->{encryption} $self->{key} $self->{email}";
 
