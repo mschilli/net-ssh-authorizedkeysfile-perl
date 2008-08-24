@@ -52,6 +52,7 @@ sub read {
 
         chomp;
         s/^\s+//;     # Remove leading blanks
+        s/\s+$//;     # Remove trailing blanks
         next if /^#/; # Ignore comment lines
 
         $line++;
@@ -80,6 +81,15 @@ sub read {
         }
         
         my @fields = parse_line(qr/\s+/, 1, $_);
+
+#        for(@fields) {
+#            if(defined $_) {
+#                print "Field: $_\n";
+#            } else {
+#                print "Field: *** UNDEF ***\n";
+#            }
+#        }
+
         DEBUG "Parsed fields: ", join(' ', map { "[$_]" } @fields);
 
         my @options = ();
@@ -139,6 +149,7 @@ sub read {
             # ssh-1 key
             my($keylen, $exponent, $key) = splice @fields, 0, 3;
             my $comment = join ' ', @fields;
+            $comment = "" if !defined $comment;
 
             DEBUG "Found $keylen bit ssh-1 key";
             push @{ $self->{keys} },
@@ -157,6 +168,7 @@ sub read {
             DEBUG "Found ssh-2 key: [@fields]";
             my($encr, $key) = splice @fields, 0, 2;
             my $comment = join ' ', @fields;
+            $comment = "" if !defined $comment;
 
             push @{ $self->{keys} },
                  Net::SSH::AuthorizedKey::SSH2->new({
