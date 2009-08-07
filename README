@@ -1,5 +1,5 @@
 ######################################################################
-    Net::SSH::AuthorizedKeysFile 0.03
+    Net::SSH::AuthorizedKeysFile 0.04
 ######################################################################
 
 NAME
@@ -45,15 +45,20 @@ METHODS
 
     "as_string"
         String representation of all keys, ultimately the content that gets
-        written out when calling the "save()" method.
+        written out when calling the "save()" method. Note that comments
+        from the original file are lost.
 
     "save"
-        Write changes back to the authorized_keys file.
+        Write changes back to the authorized_keys file using the as_string()
+        method described above. Note that comments from the original file
+        are lost. Optionally takes a file name parameter, so calling
+        "$akf->save("foo.txt")" will save the data in the file "foo.txt"
+        instead of the file the data was read from originally.
 
 LEGALESE
-    Copyright 2005 by Mike Schilli, all rights reserved. This program is
-    free software, you can redistribute it and/or modify it under the same
-    terms as Perl itself.
+    Copyright 2005-2009 by Mike Schilli, all rights reserved. This program
+    is free software, you can redistribute it and/or modify it under the
+    same terms as Perl itself.
 
 AUTHOR
     2005, Mike Schilli <m@perlmeister.com>

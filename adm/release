@@ -9,4 +9,8 @@ use strict;
     # Available at http://perlmeister.com/scripts
 use ModDevUtils;
 
+{
+    no strict;
+    *ModDevUtils::main_pm_file = sub { "lib/Net/SSH/AuthorizedKeysFile.pm" };
+}
 ModDevUtils::release() or exit 0;

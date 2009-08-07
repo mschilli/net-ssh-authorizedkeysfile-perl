@@ -6,7 +6,7 @@ use Log::Log4perl qw(:easy);
 use Text::ParseWords;
 use Net::SSH::AuthorizedKey;
 
-our $VERSION = "0.03";
+our $VERSION = "0.04";
 
 my  $ssh2_regex = qr(^ssh-);
 my  $ssh1_regex = qr(^\d);
