@@ -43,7 +43,6 @@ sub read {
     my($self) = @_;
 
     my $has_options;
-    my $ssh_version;
     my $line = 0;
 
     open FILE, "<$self->{file}" or LOGDIE "Cannot open $self->{file}";
@@ -135,17 +134,7 @@ sub read {
             return undef;
         }
 
-        if(defined $ssh_version) {
-            if($ssh_version != $line_ssh_version) {
-                LOGWARN "Switch from v$ssh_version to v$line_ssh_version ",
-                        "in $self->{file}:$line: $_";
-                return undef;
-            }
-        } else {
-            $ssh_version = $line_ssh_version;
-        }
-
-        if($ssh_version == 1) {
+        if($line_ssh_version == 1) {
             # ssh-1 key
             my($keylen, $exponent, $key) = splice @fields, 0, 3;
             my $comment = join ' ', @fields;
@@ -182,7 +171,7 @@ sub read {
         }
    }
 
-    close FILE;
+   close FILE;
 }
 
 ###########################################
@@ -202,9 +191,13 @@ sub as_string {
 ###########################################
 sub save {
 ###########################################
-    my($self) = @_;
+    my($self, $file) = @_;
 
-    blurt $self->as_string(), $self->{file};
+    if(!defined $file) {
+        $file = $self->{file};
+    }
+
+    blurt $self->as_string(), $file;
 }
 
 1;
@@ -263,17 +256,22 @@ L<Net::SSH::AuthorizedKey>.
 =item C<as_string>
 
 String representation of all keys, ultimately the content that gets
-written out when calling the C<save()> method.
+written out when calling the C<save()> method. 
+Note that comments from the original file are lost.
 
 =item C<save>
 
-Write changes back to the authorized_keys file.
+Write changes back to the authorized_keys file using the as_string()
+method described above. Note that comments from the original file are lost.
+Optionally takes a file
+name parameter, so calling C<$akf-E<gt>save("foo.txt")> will save the data
+in the file "foo.txt" instead of the file the data was read from originally.
 
 =back
 
 =head1 LEGALESE
 
-Copyright 2005 by Mike Schilli, all rights reserved.
+Copyright 2005-2009 by Mike Schilli, all rights reserved.
 This program is free software, you can redistribute it and/or
 modify it under the same terms as Perl itself.
 

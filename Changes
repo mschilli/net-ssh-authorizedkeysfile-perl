@@ -2,6 +2,9 @@
 Revision history for Perl extension Net::SSH::AuthorizedKeysFile
 ######################################################################
 
+0.04  2009/08/07
+    (ms) Allow mixed v1/v2 keys in a single authorized_keys file.
+
 0.03  2008/08/24
     (ms) Rewrote entire parsing code to comply with ssh spec, thanks to 
          Tobias Galitzien for the pointer.

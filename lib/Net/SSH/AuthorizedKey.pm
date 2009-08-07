@@ -148,7 +148,7 @@ sub as_string {
     my $string = $self->options_as_string();
     $string .= " " if length $string;
 
-    $string .= " $self->{encryption} $self->{key} $self->{email}";
+    $string .= "$self->{encryption} $self->{key} $self->{email}";
 
     return $string;
 }
