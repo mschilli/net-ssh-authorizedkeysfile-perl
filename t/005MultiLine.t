@@ -7,10 +7,10 @@ use warnings;
 use strict;
 use Sysadm::Install qw(:all);
 
-#use Log::Log4perl qw(:easy);
+use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init($DEBUG);
 
-use Test::More tests => 4;
+use Test::More tests => 5;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 
 my $tdir = "t";
@@ -26,3 +26,7 @@ my @keys = $ak->keys();
 is $keys[0]->type(), "ssh-2", "type";
 is $keys[0]->comment(), "rsa-key-20090703", "comment";
 like $keys[0]->key(), qr/^AAAA.*X==/, "key";
+
+$ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/pk-empty.txt");
+@keys = $ak->keys();
+is((scalar @keys), 0, "no keys found");

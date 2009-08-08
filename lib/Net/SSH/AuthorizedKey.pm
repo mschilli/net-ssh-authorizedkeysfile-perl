@@ -131,6 +131,7 @@ sub option_quote {
 package Net::SSH::AuthorizedKey::SSH1;
 ###########################################
 use base qw(Net::SSH::AuthorizedKey);
+use Log::Log4perl qw(:easy);
 
 ###########################################
 sub as_string {
@@ -150,10 +151,15 @@ sub sanity_check {
 ###########################################
     my($self) = @_;
 
-    return(defined $self->keylen() and
-           defined $self->exponent() and
-           defined $self->key() and
-           defined $self->email());
+    my @fields = qw(keylen exponent key);
+
+    for my $field (@fields) {
+        if(! defined $self->$field()) {
+            WARN "Sanity check failed '$field' requirement";
+            return undef;
+        }
+    }
+    return 1;
 }
 
 ###########################################
@@ -184,6 +190,11 @@ sub parse {
     #    Comment: "rsa-key-20090703"
     # or single line:
     #    tunnel="0",command="sh /etc/netstart tun0" ssh-rsa AAAA...
+
+    if($string =~ /\A\s*\Z/s) {
+        WARN "Empty multi-line string ignored";
+        return undef;
+    }
 
       # check for a newline followed by a character to determine
       # if it's multi-line or single-line.
@@ -243,8 +254,15 @@ sub sanity_check {
 ###########################################
     my($self) = @_;
 
-    return(defined $self->key() and
-           defined $self->email());
+    my @fields = qw(key);
+
+    for my $field (@fields) {
+        if(! defined $self->$field()) {
+            WARN "Sanity check failed '$field' requirement";
+            return undef;
+        }
+    }
+    return 1;
 }
 
 1;
