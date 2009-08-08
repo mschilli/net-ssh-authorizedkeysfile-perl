@@ -31,3 +31,8 @@ my $org_data = slurp("$cdir/ak-mixed.txt");
 $org_data =~ s/^\s*#.*\n//mg;
 
 is($ak->as_string(), $org_data, "write-back");
+
+$ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-ssh1-weirdo.txt");
+@keys = $ak->keys();
+is(scalar @keys, 1, "1 key found");
+is($keys[0]->email(), 'bozo@quack.schmack.com', "email4");

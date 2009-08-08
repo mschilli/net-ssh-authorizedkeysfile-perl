@@ -118,7 +118,7 @@ sub read {
         if($has_options) {
             my $options = shift @fields;
             DEBUG "Parsing options: $options" if defined $options;
-            @options = parse_line(qr/,/, 0, $options);
+            @options = parse_line(qr/\s+,\s+/, 0, $options);
             DEBUG "Parsed options: ", join(' ', map { "[$_]" } @options);
 
             for my $option (@options) {
