@@ -8,17 +8,21 @@ use Net::SSH::AuthorizedKey;
 
 our $VERSION = "0.04";
 
-my  $ssh2_regex = qr(^ssh-);
-my  $ssh1_regex = qr(^\d);
- 
+my $ssh2_regex         = qr/^ssh-/;
+my $ssh2_partial_regex = qr/^\S+-(rs|ds)/;
+my $ssh1_regex         = qr(^\d);
+my $block_start_regex  = qr(^---*\s+begin )i;
+my $block_end_regex    = qr(^---*\s+end )i;
+
 ###########################################
 sub new {
 ###########################################
     my($class, @options) = @_;
 
     my $self = {
-        file => "$ENV{HOME}/.ssh/authorized_keys",
-        keys => [],
+        file   => "$ENV{HOME}/.ssh/authorized_keys",
+        keys   => [],
+        strict => 0,
         @options,
     };
 
@@ -52,9 +56,12 @@ sub read {
         chomp;
         s/^\s+//;     # Remove leading blanks
         s/\s+$//;     # Remove trailing blanks
+        next if /^$/; # Ignore empty lines
         next if /^#/; # Ignore comment lines
 
         $line++;
+
+        my $line_string = $_;
 
         # From the sshd manpage: 
         # Protocol 1 public keys consist of the following space-separated
@@ -68,7 +75,21 @@ sub read {
         # be convenient for the user to identify the key). For protocol
         # version 2 the keytype is "ssh-dss" or "ssh-rsa".
 
-        if( /$ssh2_regex/ ) {
+        if(/$block_start_regex/) {
+            my $string = "";
+            while(<FILE>) {
+                $line++;
+                if(/$block_end_regex/) {
+                    last;
+                }
+                $string .= $_;
+            }
+            my $key = Net::SSH::AuthorizedKey::SSH2->new();
+            $key->parse( $string );
+            push @{ $self->{keys} }, $key;
+            next;
+        } elsif( /$ssh2_regex/ or
+                 (! $self->{strict} and /$ssh2_partial_regex/) ) {
             DEBUG "$ssh2_regex matched";
             $has_options = 0;
         } elsif( /$ssh1_regex/ ) {
@@ -96,7 +117,7 @@ sub read {
 
         if($has_options) {
             my $options = shift @fields;
-            DEBUG "Parsing options: $options";
+            DEBUG "Parsing options: $options" if defined $options;
             @options = parse_line(qr/,/, 0, $options);
             DEBUG "Parsed options: ", join(' ', map { "[$_]" } @options);
 
@@ -124,13 +145,19 @@ sub read {
         }
 
         my $line_ssh_version;
+
+          # Some jokers put dummy lines in their authorized_keys files
+        $fields[0] = "" unless defined $fields[0];
+
         if($fields[0] =~ /$ssh1_regex/) {
             $line_ssh_version = 1;
-        } elsif($fields[0] =~ /$ssh2_regex/) {
+        } elsif( $fields[0] =~ /$ssh2_regex/ or
+                 (! $self->{strict} and  
+                    $fields[0] =~ /$ssh2_partial_regex/) ) {
             $line_ssh_version = 2;
         } else {
             DEBUG "Neither $ssh1_regex nor $ssh2_regex matched on '$fields[0]'";
-            LOGWARN "Invalid line in $self->{file}:$line: $_";
+            WARN "Invalid line in $self->{file}:$line: $_";
             return undef;
         }
 
@@ -141,8 +168,7 @@ sub read {
             $comment = "" if !defined $comment;
 
             DEBUG "Found $keylen bit ssh-1 key";
-            push @{ $self->{keys} },
-                 Net::SSH::AuthorizedKey::SSH1->new({
+            my $keyo = Net::SSH::AuthorizedKey::SSH1->new({
                     type     => "ssh-1",
                     key      => $key,
                     keylen   => $keylen,
@@ -152,6 +178,12 @@ sub read {
                     options  => \%options,
                  });
 
+            if($keyo->sanity_check()) {
+                push @{ $self->{keys} }, $keyo;
+            } else {
+                WARN "Key [$line_string] failed sanity check -- ignored";
+            }
+
         } else {
             # ssh-2 key
             DEBUG "Found ssh-2 key: [@fields]";
@@ -159,8 +191,7 @@ sub read {
             my $comment = join ' ', @fields;
             $comment = "" if !defined $comment;
 
-            push @{ $self->{keys} },
-                 Net::SSH::AuthorizedKey::SSH2->new({
+            my $keyo = Net::SSH::AuthorizedKey::SSH2->new({
                     type       => "ssh-2",
                     encryption => $encr,
                     key        => $key,
@@ -168,6 +199,13 @@ sub read {
                     comment    => $comment,
                     options    => \%options,
                  });
+
+            if($keyo->sanity_check()) {
+                push @{ $self->{keys} }, $keyo;
+            } else {
+                WARN "Key [$line_string] failed sanity check -- ignored";
+            }
+
         }
    }
 

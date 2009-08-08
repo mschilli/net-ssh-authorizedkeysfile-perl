@@ -2,8 +2,10 @@
 package Net::SSH::AuthorizedKey;
 ###########################################
 use base qw(Class::Accessor);
-__PACKAGE__->mk_accessors(qw(options key exponent keylen email type 
-                             comment encryption));
+our @accessors = qw(options key exponent keylen email type 
+                             comment encryption);
+our %accessors = map { $_ => 1 } @accessors;
+__PACKAGE__->mk_accessors( @accessors );
 
 use strict;
 use warnings;
@@ -32,6 +34,14 @@ our %VALID_SSH2_KEYWORDS = (
     PgpKeyId              => "s",
     PgpKeyName            => "s",
 );
+
+###########################################
+sub accessor_exists {
+###########################################
+    my($self, $accessor) = @_;
+
+    return exists $accessors{ $accessor };
+}
 
 ###########################################
 sub option_type {
@@ -136,9 +146,21 @@ sub as_string {
 }
 
 ###########################################
+sub sanity_check {
+###########################################
+    my($self) = @_;
+
+    return(defined $self->keylen() and
+           defined $self->exponent() and
+           defined $self->key() and
+           defined $self->email());
+}
+
+###########################################
 package Net::SSH::AuthorizedKey::SSH2;
 ###########################################
 use base qw(Net::SSH::AuthorizedKey);
+use Log::Log4perl qw(:easy);
 
 ###########################################
 sub as_string {
@@ -151,6 +173,78 @@ sub as_string {
     $string .= "$self->{encryption} $self->{key} $self->{email}";
 
     return $string;
+}
+
+###########################################
+sub parse {
+###########################################
+    my($self, $string) = @_;
+
+    # Multi-line:
+    #    Comment: "rsa-key-20090703"
+    # or single line:
+    #    tunnel="0",command="sh /etc/netstart tun0" ssh-rsa AAAA...
+
+      # check for a newline followed by a character to determine
+      # if it's multi-line or single-line.
+    if($string =~ /\n./) {
+        return $self->parse_multi_line( $string );
+    }
+
+    return $self->parse_single_line( $string );
+}
+
+###########################################
+sub parse_multi_line {
+###########################################
+    my($self, $string) = @_;
+
+    my @fields = ();
+
+    while($string =~ s/^(.*):\s+(.*)//gm) {
+        my($field, $value) = ($1, $2);
+          # remove quotes
+        $value =~ s/^"(.*)"$/$1/;
+        push @fields, $field, $value;
+        my $lcfield = lc $field;
+
+        if( $self->accessor_exists( $lcfield ) ) {
+            $self->$lcfield( $value );
+        } else {
+            WARN "Ignoring unknown field '$field'";
+        }
+    }
+
+      # Rest is the key, split across several lines
+    $string =~ s/\n//g;
+    $self->key( $string );
+    $self->type( "ssh-2" );
+
+      # Comment: "rsa-key-20090703"
+    if($self->comment() =~ /\b(.*?)-key/) {
+        $self->encryption( "ssh-" . $1 );
+    } elsif( ! $self->{strict} ) {
+        WARN "Unknown encryption [", $self->comment(), 
+             "] fixed to ssh-rsa"; 
+        $self->encryption( "ssh-rsa" );
+    }
+}
+
+###########################################
+sub parse_single_line {
+###########################################
+    my($self, $string) = @_;
+
+    die "Whoa, not implemented!";
+}
+
+###########################################
+sub sanity_check {
+###########################################
+    my($self) = @_;
+
+    return(defined $self->key() and
+           defined $self->email());
 }
 
 1;

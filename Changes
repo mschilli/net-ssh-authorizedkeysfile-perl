@@ -2,6 +2,11 @@
 Revision history for Perl extension Net::SSH::AuthorizedKeysFile
 ######################################################################
 
+0.05  2009/08/07
+    (ms) Ignore empty lines
+    (ms) Allow multi-lines for ssh2 pubkeys
+    (ms) Fixes for more resilience towards mistyped authkey files
+
 0.04  2009/08/07
     (ms) Allow mixed v1/v2 keys in a single authorized_keys file.
 
