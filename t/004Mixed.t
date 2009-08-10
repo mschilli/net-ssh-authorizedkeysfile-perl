@@ -10,7 +10,7 @@ use Sysadm::Install qw(:all);
 #use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init($DEBUG);
 
-use Test::More tests => 5;
+use Test::More tests => 7;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 
 my $tdir = "t";
