@@ -9,8 +9,12 @@ t/001Basic.t
 t/002Ssh-2.t
 t/003Format.t
 t/004Mixed.t
+t/005MultiLine.t
 t/canned/ak-comments.txt
 t/canned/ak-manpage.txt
 t/canned/ak-mixed.txt
+t/canned/ak-ssh1-weirdo.txt
 t/canned/ak-ssh2.txt
 t/canned/ak.txt
+t/canned/pk-empty.txt
+t/canned/pk-ssh2.txt
