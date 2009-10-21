@@ -12,6 +12,7 @@ WriteMakefile(
         Test::More       => 0,
         Class::Accessor  => 0,
     }, # e.g., Module::Name => 1.1
+    'EXE_FILES'    => [ 'eg/authorized-keys-test' ],
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM => 'lib/Net/SSH/AuthorizedKeysFile.pm',
        AUTHOR     => 'Mike Schilli <m@perlmeister.com>') : ()),
