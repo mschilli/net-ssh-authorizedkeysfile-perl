@@ -21,6 +21,7 @@ my $cdir = "$tdir/canned";
 use Net::SSH::AuthorizedKeysFile;
 
 my $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-manpage.txt");
+$ak->read();
 
 my @keys = $ak->keys();
 
@@ -54,6 +55,7 @@ my($fh, $filename) = tempfile();
     # Modify a authkey file
 cp "$cdir/ak-manpage.txt", $filename;
 my $ak2 = Net::SSH::AuthorizedKeysFile->new(file => $filename);
+$ak2->read();
 @keys = $ak2->keys();
 
 # Write option containing blank
@@ -62,6 +64,7 @@ $ak2->save();
 
     # Read in modifications
 my $ak3 = Net::SSH::AuthorizedKeysFile->new(file => $filename);
+$ak3->read();
 @keys = $ak3->keys();
 
 is($keys[4]->option("command"), 'waah waah waah', 
@@ -69,6 +72,7 @@ is($keys[4]->option("command"), 'waah waah waah',
 
 # Comments with blanks
 $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-comments.txt");
+$ak->read();
 @keys = $ak->keys();
 
 # Write option containing blank

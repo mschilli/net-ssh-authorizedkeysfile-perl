@@ -186,6 +186,8 @@ sub parse {
 ###########################################
     my($self, $string) = @_;
 
+    DEBUG "Parsing key [$string]";
+
     # Multi-line:
     #    Comment: "rsa-key-20090703"
     # or single line:

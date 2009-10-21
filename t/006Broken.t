@@ -6,11 +6,12 @@
 use warnings;
 use strict;
 use Sysadm::Install qw(:all);
+use File::Temp qw(tempfile);
 
 use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init($DEBUG);
 
-use Test::More tests => 5;
+use Test::More tests => 4;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 
 my $tdir = "t";
@@ -19,16 +20,17 @@ my $cdir = "$tdir/canned";
 
 use Net::SSH::AuthorizedKeysFile;
 
-my $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/pk-ssh2.txt");
-$ak->read();
+my $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-broken.txt");
+my $rc = $ak->read();
 
-my @keys = $ak->keys();
+is($rc, undef, "read fail on broken authorized_keys");
 
-is $keys[0]->type(), "ssh-2", "type";
-is $keys[0]->comment(), "rsa-key-20090703", "comment";
-like $keys[0]->key(), qr/^AAAA.*X==/, "key";
+$ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak.txt");
+$rc = $ak->read();
 
-$ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/pk-empty.txt");
-$ak->read();
-@keys = $ak->keys();
-is((scalar @keys), 0, "no keys found");
+is($rc, 1, "read ok on ok authorized_keys");
+
+$ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-broken.txt");
+$rc = $ak->read();
+
+is($rc, undef, "read fail on broken authorized_keys");

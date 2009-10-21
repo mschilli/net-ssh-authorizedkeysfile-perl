@@ -21,6 +21,7 @@ my $cdir = "$tdir/canned";
 use Net::SSH::AuthorizedKeysFile;
 
 my $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak.txt");
+$ak->read();
 
 my @keys = $ak->keys();
 
@@ -38,6 +39,7 @@ my($fh, $filename) = tempfile();
     # Modify a authkey file
 cp "$cdir/ak.txt", $filename;
 my $ak2 = Net::SSH::AuthorizedKeysFile->new(file => $filename);
+$ak2->read();
 @keys = $ak2->keys();
 
 $keys[0]->keylen(1025);
@@ -46,6 +48,7 @@ $ak2->save();
 
     # Read in modifications
 my $ak3 = Net::SSH::AuthorizedKeysFile->new(file => $filename);
+$ak3->read();
 @keys = $ak3->keys();
 
 is($keys[0]->keylen(), 1025, "modified keylen");
@@ -56,6 +59,7 @@ $keys[1]->option_delete("From");
 $ak3->save();
 
 my $ak4 = Net::SSH::AuthorizedKeysFile->new(file => $filename);
+$ak4->read();
 @keys = $ak4->keys();
 
 is($keys[1]->option("From"), undef, "Removed from");

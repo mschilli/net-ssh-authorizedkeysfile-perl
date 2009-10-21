@@ -2,6 +2,15 @@
 Revision history for Perl extension Net::SSH::AuthorizedKeysFile
 ######################################################################
 
+0.06  2009/10/20
+    (ms) new() no longer reads the configuration file
+         automatically, read() must be called separately. This breaks
+         backward compatibility. Sorry, but it had to be fixed.
+  
+    (ms) Even odd cases of authorized_keys files are now handled 
+         correctly (but of course there could be even odder cases
+         that caused the parser to bail :)
+
 0.05  2009/08/07
     (ms) Ignore empty lines
     (ms) Allow multi-lines for ssh2 pubkeys

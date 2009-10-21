@@ -20,6 +20,7 @@ my $cdir = "$tdir/canned";
 use Net::SSH::AuthorizedKeysFile;
 
 my $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-ssh2.txt");
+$ak->read();
 
 my @keys = $ak->keys();
 
@@ -36,8 +37,10 @@ is($keys[1]->email(), 'bar@foo.com', "key");
 my($fh, $filename) = tempfile();
 cp "$cdir/ak-ssh2.txt", $filename;
 $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-ssh2.txt");
+$ak->read();
 
 $ak = Net::SSH::AuthorizedKeysFile->new(file => $filename);
+$ak->read();
 
 @keys = $ak->keys();
 
@@ -46,6 +49,7 @@ is($keys[0]->key(), "123", "modified key");
 $ak->save();
 
 $ak = Net::SSH::AuthorizedKeysFile->new(file => $filename);
+$ak->read();
 is($keys[0]->key(), "123", "modified key");
 is($keys[1]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj234", "unmodified key");
 

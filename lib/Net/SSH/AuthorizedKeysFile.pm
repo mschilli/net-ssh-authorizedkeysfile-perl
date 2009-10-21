@@ -8,9 +8,9 @@ use Net::SSH::AuthorizedKey;
 
 our $VERSION = "0.04";
 
-my $ssh2_regex         = qr/^ssh-/;
-my $ssh2_partial_regex = qr/^\S+-(rs|ds)/;
-my $ssh1_regex         = qr(^\d);
+my $ssh2_regex         = qr/ssh-/;
+my $ssh2_partial_regex = qr/\S+-(rs|ds)/;
+my $ssh1_regex         = qr(\d);
 my $block_start_regex  = qr(^---*\s+begin )i;
 my $block_end_regex    = qr(^---*\s+end )i;
 
@@ -28,8 +28,6 @@ sub new {
 
     bless $self, $class;
 
-    $self->read();
-
     return $self;
 }
 
@@ -44,20 +42,27 @@ sub keys {
 ###########################################
 sub read {
 ###########################################
-    my($self) = @_;
+    my($self, $file) = @_;
+
+    $self->{file} = $file if defined $file;
 
     my $has_options;
     my $line = 0;
+
+    DEBUG "Reading in $self->{file}";
 
     open FILE, "<$self->{file}" or LOGDIE "Cannot open $self->{file}";
 
     while(<FILE>) { 
 
         chomp;
+
         s/^\s+//;     # Remove leading blanks
         s/\s+$//;     # Remove trailing blanks
         next if /^$/; # Ignore empty lines
         next if /^#/; # Ignore comment lines
+
+        DEBUG "Analyzing line [$_]";
 
         $line++;
 
@@ -76,6 +81,7 @@ sub read {
         # version 2 the keytype is "ssh-dss" or "ssh-rsa".
 
         if(/$block_start_regex/) {
+            DEBUG "Found block start regex";
             my $string = "";
             while(<FILE>) {
                 $line++;
@@ -85,42 +91,39 @@ sub read {
                 $string .= $_;
             }
             my $key = Net::SSH::AuthorizedKey::SSH2->new();
+            DEBUG "Parsing ssh2 key [$string]";
             $key->parse( $string );
             if( $key->sanity_check() ) {
                 push @{ $self->{keys} }, $key;
             }
             next;
-        } elsif( /$ssh2_regex/ or
-                 (! $self->{strict} and /$ssh2_partial_regex/) ) {
-            DEBUG "$ssh2_regex matched";
+        } elsif( /^$ssh2_regex/ or
+                 (! $self->{strict} and /^$ssh2_partial_regex/) ) {
+            DEBUG "ssh2_regex matched";
             $has_options = 0;
-        } elsif( /$ssh1_regex/ ) {
-            DEBUG "$ssh1_regex matched";
+        } elsif( /^$ssh1_regex/ ) {
+            DEBUG "ssh1_regex matched";
             $has_options = 0;
         } else {
-            DEBUG "Found options";
+            DEBUG "Found front options";
             $has_options = 1;
         }
         
+          # Spaces around commas within options in front of a ssh1 key
+          # don't really count
+        s/\s*,\s*(?=.*$ssh1_regex)/,/g;
+
         my @fields = parse_line(qr/\s+/, 1, $_);
 
-#        for(@fields) {
-#            if(defined $_) {
-#                print "Field: $_\n";
-#            } else {
-#                print "Field: *** UNDEF ***\n";
-#            }
-#        }
-
-        DEBUG "Parsed fields: ", join(' ', map { "[$_]" } @fields);
+        DEBUG "parse_line returned: ", join(' ', map { "[$_]" } @fields);
 
         my @options = ();
         my %options = ();
 
         if($has_options) {
             my $options = shift @fields;
-            DEBUG "Parsing options: $options" if defined $options;
-            @options = parse_line(qr/\s+,\s+/, 0, $options);
+            DEBUG "Parsing options: [$options]" if defined $options;
+            @options = parse_line(qr/\s*,\s*/, 0, $options);
             DEBUG "Parsed options: ", join(' ', map { "[$_]" } @options);
 
             for my $option (@options) {
@@ -151,16 +154,24 @@ sub read {
           # Some jokers put dummy lines in their authorized_keys files
         $fields[0] = "" unless defined $fields[0];
 
-        if($fields[0] =~ /$ssh1_regex/) {
-            $line_ssh_version = 1;
-        } elsif( $fields[0] =~ /$ssh2_regex/ or
-                 (! $self->{strict} and  
-                    $fields[0] =~ /$ssh2_partial_regex/) ) {
-            $line_ssh_version = 2;
-        } else {
-            DEBUG "Neither $ssh1_regex nor $ssh2_regex matched on '$fields[0]'";
-            WARN "Invalid line in $self->{file}:$line: $_";
-            return undef;
+        {
+            if($fields[0] =~ /^$ssh1_regex/) {
+                $line_ssh_version = 1;
+            } elsif( $fields[0] =~ /^$ssh2_regex/ or
+                     (! $self->{strict} and  
+                        $fields[0] =~ /^$ssh2_partial_regex/) ) {
+                $line_ssh_version = 2;
+            } else {
+                if(! $self->{strict} and @fields >= 2) {
+                    DEBUG "Trying to skip $fields[0] to get to a valid key";
+                    shift @fields;
+                    redo;
+                }
+                DEBUG "Neither $ssh1_regex nor $ssh2_regex matched on ",
+                      "'$fields[0]'";
+                WARN "Invalid line in $self->{file}:$line: $_";
+                return undef;
+            }
         }
 
         if($line_ssh_version == 1) {
@@ -255,9 +266,11 @@ Net::SSH::AuthorizedKeysFile - Read and modify ssh's authorized_keys files
         # Reads $HOME/.ssh/authorized_keys by default
     my $akf = Net::SSH::AuthorizedKeysFile->new();
 
+    $akf->read("authorized_keys");
+
         # Iterate over entries
     for my $key ($akf->keys()) {
-        print $key->keylen(), "\n";
+        print $key->as_string(), "\n";
     }
 
         # Modify entries:
