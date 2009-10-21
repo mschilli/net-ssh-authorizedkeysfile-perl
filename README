@@ -1,5 +1,5 @@
 ######################################################################
-    Net::SSH::AuthorizedKeysFile 0.04
+    Net::SSH::AuthorizedKeysFile 0.06
 ######################################################################
 
 NAME
@@ -12,9 +12,11 @@ SYNOPSIS
             # Reads $HOME/.ssh/authorized_keys by default
         my $akf = Net::SSH::AuthorizedKeysFile->new();
 
+        $akf->read("authorized_keys");
+
             # Iterate over entries
         for my $key ($akf->keys()) {
-            print $key->keylen(), "\n";
+            print $key->as_string(), "\n";
         }
 
             # Modify entries:
