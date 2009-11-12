@@ -91,11 +91,8 @@ sub read {
                 $string .= $_;
             }
             my $key = Net::SSH::AuthorizedKey::SSH2->new();
-            DEBUG "Parsing ssh2 key [$string]";
             $key->parse( $string );
-            if( $key->sanity_check() ) {
-                push @{ $self->{keys} }, $key;
-            }
+            push @{ $self->{keys} }, $key;
             next;
         } elsif( /^$ssh2_regex/ or
                  (! $self->{strict} and /^$ssh2_partial_regex/) ) {
