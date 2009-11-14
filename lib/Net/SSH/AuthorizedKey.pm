@@ -1,60 +1,57 @@
 ###########################################
 package Net::SSH::AuthorizedKey;
 ###########################################
-our @accessors = qw(options key type 
-                    encryption);
-our %accessors = map { $_ => 1 } @accessors;
-__PACKAGE__->make_accessor( $_ ) for @accessors;
-
 use strict;
 use warnings;
 use Log::Log4perl qw(:easy);
 
-# There are options that carry values (like command="ls") and 
-# binary options that are either set or unset. To set a binary
-# option, use
-#
-#     $self->option_set("no_agent_forwarding")
-#
-# (no value parameter) and to set an option that carries a value, provide
-# the value as the second parameter:
-#
-#     $self->option_set("command", "ls");
-#
-# To retrieve the value of an option, use
-#
-#      $onoff = $self->option_get("no_agent_forwarding")
-#
-# for a binary option, which returns 1 if it's set and undef
-# if it isn't. To retrieve the value of an option that carries
-# a value, use 
-#
-#     $command = $self->option_get("command");
-#
-# respecitively.
+  # Accessors common for both ssh1 and ssh2 keys
+our @accessors = qw(options key type encryption);
+our %accessors = map { $_ => 1 } @accessors;
+__PACKAGE__->make_accessor( $_ ) for @accessors;
+
+  # Some functions must be implemented in the subclass
+do {
+    no strict qw(refs);
+
+    *{__PACKAGE__ . "::$_"} = sub {
+        die "Whoa! '$_' in the virtual base class has to be ",
+            " implemented by a real subclass.";
+    };
+
+} for qw(option_type as_string parse);
 
 ###########################################
-sub option_set {
+sub option_valid {
+###########################################
+    my($self, $key) = @_;
+
+    return $self->option_type($key);
+}
+
+###########################################
+sub option {
 ###########################################
     my($self, $key, $value) = @_;
 
     $key = lc $key;
 
-    if(defined $value) {
-        $self->{options}->{$key} = $value;
-    } else {
-        $self->{options}->{$key} = \undef;
+    my $option_type = $self->option_type($key);
+
+    if(! defined $option_type) {
+        LOGWARN "Illegal option '$key'";
+        return undef;
     }
 
-    return $self->option_get( $key );
-}
+    if(defined $value) {
+        if($option_type eq "s") {
+            $self->{options}->{$key} = $value;
+        } else {
+            $self->{options}->{$key} = undef;
+        }
+    }
 
-###########################################
-sub option_get {
-###########################################
-    my($self, $key) = @_;
-
-
+    return $self->{options}->{$key};
 }
 
 ###########################################
@@ -159,6 +156,41 @@ The only way to using it directly is by calling its parse() method, and handing
 it an authorized_keys string (aka a line from an authorized_keys file). If it
 recognizes either a ssh-1 or a ssh-2 type key, it will return a
 Net::SSH::AuthorizedKey::SSH1 or a Net::SSH::AuthorizedKey::SSH2 object.
+See their manual pages for instructions on how to use them.
+
+=head1 NOTES FOR SUBCLASS DEVELOPERS
+
+If you're just using Net::SSH::AuthorizedKey to parse keys, the
+following section doesn't concern you. It's only relevant if you add 
+new subclasses to this package, on top of what's already provided.
+
+Net::SSH::AuthorizedKey is a (semi-)virtual base class implements 
+options handling for its SSH1 and SSH2 subclasses.
+
+SSH key lines can contain options that carry values (like command="ls") and
+binary options that are either set or unset (like "no_agent_forwarding").  To
+distinguish the two, and to provide a set of allowed option names, the subclass
+has to implement the method option_type(), which takes an option name, and
+returns
+
+=over 4
+
+=item *
+
+undef if the option is not supported
+
+=item *
+
+"s" if the option is a "string" option that carries a value
+
+=item *
+
+1 if the option is a binary option
+
+=back
+
+The subclasses Net::SSH::AuthorizedKey::SSH1 and Net::SSH::AuthorizedKey::SSH2
+are doing this already.
 
 =head1 LEGALESE
 
