@@ -44,34 +44,11 @@ sub accessor_exists {
 }
 
 ###########################################
-sub option_type {
-###########################################
-    my($self, $key, $value) = @_;
-
-    if(exists $VALID_KEYWORDS{$key}) {
-       return  $VALID_KEYWORDS{$key};
-    } 
-
-    if($self->{type} eq "ssh-2" and exists $VALID_SSH2_KEYWORDS{$key}) {
-       return  $VALID_SSH2_KEYWORDS{$key};
-    } 
-
-    return undef;
-}
-
-###########################################
 sub option {
 ###########################################
     my($self, $key, $value) = @_;
 
     $key = lc $key;
-
-    my $option_type = $self->option_type($key);
-
-    if(! defined $option_type) {
-        LOGWARN "Illegal option '$key'";
-        return undef;
-    }
 
     if(defined $value) {
         if($option_type eq "s") {

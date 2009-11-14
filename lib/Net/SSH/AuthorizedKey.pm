@@ -1,65 +1,60 @@
 ###########################################
 package Net::SSH::AuthorizedKey;
 ###########################################
-use base qw(Class::Accessor);
-our @accessors = qw(options key exponent keylen email type 
-                             comment encryption);
+our @accessors = qw(options key type 
+                    encryption);
 our %accessors = map { $_ => 1 } @accessors;
-__PACKAGE__->mk_accessors( @accessors );
+__PACKAGE__->make_accessor( $_ ) for @accessors;
 
 use strict;
 use warnings;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = "0.04";
+# There are options that carry values (like command="ls") and 
+# binary options that are either set or unset. To set a binary
+# option, use
+#
+#     $self->option_set("no_agent_forwarding")
+#
+# (no value parameter) and to set an option that carries a value, provide
+# the value as the second parameter:
+#
+#     $self->option_set("command", "ls");
+#
+# To retrieve the value of an option, use
+#
+#      $onoff = $self->option_get("no_agent_forwarding")
+#
+# for a binary option, which returns 1 if it's set and undef
+# if it isn't. To retrieve the value of an option that carries
+# a value, use 
+#
+#     $command = $self->option_get("command");
+#
+# respecitively.
 
 ###########################################
-sub accessor_exists {
-###########################################
-    my($self, $accessor) = @_;
-
-    return exists $accessors{ $accessor };
-}
-
-###########################################
-sub option_type {
-###########################################
-    my($self, $key, $value) = @_;
-
-    if(exists $VALID_KEYWORDS{$key}) {
-       return  $VALID_KEYWORDS{$key};
-    } 
-
-    if($self->{type} eq "ssh-2" and exists $VALID_SSH2_KEYWORDS{$key}) {
-       return  $VALID_SSH2_KEYWORDS{$key};
-    } 
-
-    return undef;
-}
-
-###########################################
-sub option {
+sub option_set {
 ###########################################
     my($self, $key, $value) = @_;
 
     $key = lc $key;
 
-    my $option_type = $self->option_type($key);
-
-    if(! defined $option_type) {
-        LOGWARN "Illegal option '$key'";
-        return undef;
-    }
-
     if(defined $value) {
-        if($option_type eq "s") {
-            $self->{options}->{$key} = $value;
-        } else {
-            $self->{options}->{$key} = undef;
-        }
+        $self->{options}->{$key} = $value;
+    } else {
+        $self->{options}->{$key} = \undef;
     }
 
-    return $self->{options}->{$key};
+    return $self->option_get( $key );
+}
+
+###########################################
+sub option_get {
+###########################################
+    my($self, $key) = @_;
+
+
 }
 
 ###########################################
@@ -105,6 +100,34 @@ sub option_quote {
     return "$option=\"" . $text . "\"";
 }
 
+##################################################
+# Poor man's Class::Struct
+##################################################
+sub make_accessor {
+##################################################
+    my($package, $name) = @_;
+
+    no strict qw(refs);
+
+    my $code = <<EOT;
+        *{"$package\\::$name"} = sub {
+            my(\$self, \$value) = \@_;
+
+            if(defined \$value) {
+                \$self->{$name} = \$value;
+            }
+            if(exists \$self->{$name}) {
+                return (\$self->{$name});
+            } else {
+                return "";
+            }
+        }
+EOT
+    if(! defined *{"$package\::$name"}) {
+        eval $code or die "$@";
+    }
+}
+
 1;
 
 __END__
@@ -133,9 +156,9 @@ Real implementations of it are Net::SSH::AuthorizedKey::SSH1 and
 Net::SSH::AuthorizedKey::SSH2. 
 
 The only way to using it directly is by calling its parse() method, and handing
-it a authorized_keys string. If it recognizes either a ssh-1 or a ssh-2 type
-key, it will return a Net::SSH::AuthorizedKey::SSH1 or a
-Net::SSH::AuthorizedKey::SSH2 object.
+it an authorized_keys string (aka a line from an authorized_keys file). If it
+recognizes either a ssh-1 or a ssh-2 type key, it will return a
+Net::SSH::AuthorizedKey::SSH1 or a Net::SSH::AuthorizedKey::SSH2 object.
 
 =head1 LEGALESE
 
