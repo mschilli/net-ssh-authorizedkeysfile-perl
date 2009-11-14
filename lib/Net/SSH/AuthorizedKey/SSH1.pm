@@ -1,231 +1,130 @@
 ###########################################
-package Net::SSH::AuthorizedKey;
+package Net::SSH::AuthorizedKey::SSH1;
 ###########################################
-use base qw(Class::Accessor);
-our @accessors = qw(options key exponent keylen email type 
-                             comment encryption);
-our %accessors = map { $_ => 1 } @accessors;
-__PACKAGE__->mk_accessors( @accessors );
-
 use strict;
 use warnings;
+use base qw(Net::SSH::AuthorizedKey);
 use Log::Log4perl qw(:easy);
 
-our $VERSION = "0.04";
+our @REQUIRED_FIELDS = qw(
+    keylen exponent key options
+);
 
-our %VALID_KEYWORDS = (
+our @OPTIONAL_FIELDS = qw(
+    error email
+);
+
+__PACKAGE__->make_accessor( $_ ) for 
+   (@REQUIRED_FIELDS, @OPTIONAL_FIELDS);
+
+our %VALID_OPTIONS = (
+    "no-port-forwarding"  => 1,
+    "no-agent-forwarding" => 1,
+    "no-x11-forwarding"   => 1,
+    "no-pty"              => 1,
+    "no-user-rc"          => 1,
     command               => "s",
     environment           => "s",
     from                  => "s",
     permitopen            => "s",
-    tunnel                => "n",
-    "no-agent-forwarding" => 1,
-    "no-port-forwarding"  => 1,
-    "no-pty"              => 1,
-    "no-x11-forwarding"   => 1,
-);
-
-our %VALID_SSH2_KEYWORDS = (
-    Command               => "s",
-    "Keyfilename.pub"     => "s",
-    Options               => "s",
-    PgpPublicKeyFile      => "s",
-    PgpKeyFingerprint     => "s",
-    PgpKeyId              => "s",
-    PgpKeyName            => "s",
+    tunnel                => "s",
 );
 
 ###########################################
-sub accessor_exists {
+sub new {
 ###########################################
-    my($self, $accessor) = @_;
+    my($class, %options) = @_;
 
-    return exists $accessors{ $accessor };
-}
+    my $self = {
+        type  => "ssh-1",
+        error => "(no error)",
+        %options,
+    };
 
-###########################################
-sub option {
-###########################################
-    my($self, $key, $value) = @_;
-
-    $key = lc $key;
-
-    if(defined $value) {
-        if($option_type eq "s") {
-            $self->{options}->{$key} = $value;
-        } else {
-            $self->{options}->{$key} = undef;
-        }
-    }
-
-    return $self->{options}->{$key};
-}
-
-###########################################
-sub option_delete {
-###########################################
-    my($self, $key) = @_;
-
-    $key = lc $key;
-
-    delete $self->{options}->{$key};
-}
-
-###########################################
-sub options_as_string {
-###########################################
-    my($self) = @_;
-
-    my $string = "";
-    my @parts  = ();
-
-    for my $option ( keys %{ $self->{options} } ) {
-        if(defined $self->{options}->{$option}) {
-            if(ref($self->{options}->{$option}) eq "ARRAY") {
-                for (@{ $self->{options}->{$option} }) {
-                    push @parts, option_quote($option, $_);
-                }
-            } else {
-                push @parts, option_quote($option, $self->{options}->{$option});
-            }
-        } else {
-            push @parts, $option;
-        }
-    }
-    return join(',', @parts);
-}
-
-###########################################
-sub option_quote {
-###########################################
-    my($option, $text) = @_;
-
-    $text =~ s/([\\"])/\\$1/g;
-    return "$option=\"" . $text . "\"";
-}
-
-###########################################
-package Net::SSH::AuthorizedKey::SSH1;
-###########################################
-use base qw(Net::SSH::AuthorizedKey);
-use Log::Log4perl qw(:easy);
-
-###########################################
-sub as_string {
-###########################################
-    my($self) = @_;
-
-    my $string = $self->options_as_string();
-    $string .= " " if length $string;
-
-    $string .= "$self->{keylen} $self->{exponent} $self->{key} $self->{email}";
-
-    return $string;
-}
-
-###########################################
-sub sanity_check {
-###########################################
-    my($self) = @_;
-
-    my @fields = qw(keylen exponent key);
-
-    for my $field (@fields) {
-        if(! defined $self->$field()) {
-            WARN "Sanity check failed '$field' requirement";
-            return undef;
-        }
-    }
-    return 1;
-}
-
-###########################################
-package Net::SSH::AuthorizedKey::SSH2;
-###########################################
-use base qw(Net::SSH::AuthorizedKey);
-use Log::Log4perl qw(:easy);
-
-###########################################
-sub as_string {
-###########################################
-    my($self) = @_;
-
-    my $string = $self->options_as_string();
-    $string .= " " if length $string;
-
-    $string .= "$self->{encryption} $self->{key} $self->{email}";
-
-    return $string;
+    bless $self, $class;
+    return $self;
 }
 
 ###########################################
 sub parse {
 ###########################################
-    my($self, $string) = @_;
+    my($class, $string) = @_;
 
-    DEBUG "Parsing key [$string]";
+    # We assume whitespace and comments have been cleaned up
 
-    # Multi-line:
-    #    Comment: "rsa-key-20090703"
-    # or single line:
-    #    tunnel="0",command="sh /etc/netstart tun0" ssh-rsa AAAA...
+    if(my $key = key_read( $string ) ) {
+          # We found a type-1 key without options
+        $key->{options} = {};
+        DEBUG "Found ssh-1 key: ", $key->as_string();
+        return $key;
+    }
 
-    if($string =~ /\A\s*\Z/s) {
-        WARN "Empty multi-line string ignored";
+    # No key found. Probably there are options in front of the key.
+    # The openssh-5 parser doesn't allow escaped backslashes (\\), 
+    # so we don't either.
+    (my $key_string = $string) =~ s/\s|
+                                    "(\\"|.)*?"
+                                   //gx;
+
+    if(my $key = key_read( $string ) ) {
+          # We found a type-1 key with options
+        $key->{options} = $key->options_parse( $string );
+        DEBUG "Found ssh-1 key: ", $key->as_string();
+        return $key;
+    }
+
+    DEBUG "Cannot parse line: $string";
+
+    return undef;
+}
+
+###########################################
+sub key_read {
+############################################
+    my($line) = @_;
+
+    if($line !~ s/^(\d+)\s*//) {
         return undef;
     }
 
-      # check for a newline followed by a character to determine
-      # if it's multi-line or single-line.
-    if($string =~ /\n./) {
-        return $self->parse_multi_line( $string );
+    my $keylen = $1;
+    DEBUG "Parsed keylen: $keylen";
+
+    if($line !~ s/^(\d+)\s*//) {
+        return undef;
     }
 
-    return $self->parse_single_line( $string );
+    my $exponent = $1;
+    DEBUG "Parsed exponent: $exponent";
+
+    if($line !~ s/^(\d+)\s*//) {
+        return undef;
+    }
+
+    my $key = $1;
+    DEBUG "Parsed key: $key";
+
+    my $obj = __PACKAGE__->new();
+    $obj->keylen( $keylen );
+    $obj->key( $key );
+    $obj->exponent( $exponent );
+    $obj->email( $line );
+
+    return $obj;
 }
 
 ###########################################
-sub parse_multi_line {
+sub as_string {
 ###########################################
-    my($self, $string) = @_;
+    my($self) = @_;
 
-    my @fields = ();
+    my $string = $self->options_as_string();
+    $string .= " " if length $string;
 
-    while($string =~ s/^(.*):\s+(.*)//gm) {
-        my($field, $value) = ($1, $2);
-          # remove quotes
-        $value =~ s/^"(.*)"$/$1/;
-        push @fields, $field, $value;
-        my $lcfield = lc $field;
+    $string .= "$self->{keylen} $self->{exponent} $self->{key}";
+    $string .= " $self->{email}" if length $self->{email};
 
-        if( $self->accessor_exists( $lcfield ) ) {
-            $self->$lcfield( $value );
-        } else {
-            WARN "Ignoring unknown field '$field'";
-        }
-    }
-
-      # Rest is the key, split across several lines
-    $string =~ s/\n//g;
-    $self->key( $string );
-    $self->type( "ssh-2" );
-
-      # Comment: "rsa-key-20090703"
-    if($self->comment() =~ /\b(.*?)-key/) {
-        $self->encryption( "ssh-" . $1 );
-    } elsif( ! $self->{strict} ) {
-        WARN "Unknown encryption [", $self->comment(), 
-             "] fixed to ssh-rsa"; 
-        $self->encryption( "ssh-rsa" );
-    }
-}
-
-###########################################
-sub parse_single_line {
-###########################################
-    my($self, $string) = @_;
-
-    die "Whoa, not implemented!";
+    return $string;
 }
 
 ###########################################
@@ -233,15 +132,26 @@ sub sanity_check {
 ###########################################
     my($self) = @_;
 
-    my @fields = qw(key);
-
-    for my $field (@fields) {
-        if(! defined $self->$field()) {
+    for my $field (@REQUIRED_FIELDS) {
+        if(! length $self->$field()) {
             WARN "Sanity check failed '$field' requirement";
             return undef;
         }
     }
+
     return 1;
+}
+
+###########################################
+sub option_type {
+###########################################
+    my($self, $option) = @_;
+
+    if(exists $VALID_OPTIONS{ $option }) {
+        return $VALID_OPTIONS{ $option };
+    }
+
+    return undef;
 }
 
 1;
@@ -250,61 +160,48 @@ __END__
 
 =head1 NAME
 
-Net::SSH::AuthorizedKey - Holds a single line of the authorized_keys file
+Net::SSH::AuthorizedKey::SSH1 - SSH version 1 public keys
 
 =head1 SYNOPSIS
 
-    use Net::SSH::AuthorizedKey;
+    use Net::SSH::AuthorizedKey::SSH1;
 
-    my $akf = Net::SSH::AuthorizedKey->new(
-        options  => { from => 'foo@bar.com', "no-agent-forwarding" },
+      # Either parse a string (without leading whitespace or comments):
+    my $pubkey = Net::SSH::AuthorizedKey::SSH1->parse( $string );
+
+      # ... or create an object yourself:
+    my $pubkey = Net::SSH::AuthorizedKey->new(
+        options  => { from                  => 'foo@bar.com', 
+                      "no-agent-forwarding" => 1 },
         key      => "123....890",
         keylen   => 1024,
         exponent => 35,
         type     => "ssh-1",
-        email    => 'issuer@issuer.com',
     );
 
 =head1 DESCRIPTION
 
-Net::SSH::AuthorizedKey objects holds key lines from ssh's authorized_keys
-files. They just provide getter/setter methods.
+Net::SSH::AuthorizedKey::SSH1 objects hold ssh version 1 public keys,
+typically extracted from an authorized_keys file. 
 
-=head1 METHODS
+The C<parse()> method takes a line from an authorized_keys file (leading
+whitespace and comments need to be cleaned up beforehand), parses the
+data, and returns a Net::SSH::AuthorizedKey::SSH1 object which offers
+accessors for all relevant fields and a as_string() method to assemble 
+it back together as a string.
+
+Net::SSH::AuthorizedKey::SSH1 is a subclass of Net::SSH::AuthorizedKey,
+which offers methods to control key option settings.
+
+=head2 FIELDS
+
+All of the following fields are available via accessors:
 
 =over 4
 
-=item C<option>
-
-Get/set an option. Note that options can be either binary or carry a string:
-
-        # Set "no-agent-forwarding" option
-    $ak->option("no-agent-forwarding", 1);
-
-        # Check if no-agent-forwarding option is set
-    if($ak->option("no-agent-forwarding")) {
-        # ...
-    }
-
-        # Set the from option to 'from="a@b.com"'
-    $ak->option(from => 'a@b.com');
-
-        # Get the value of the 'from' option
-    my $val = $ak->option("from");
-
-=item C<option_delete>
-
-Remove an option completely. C<$ak-E<gt>option_delete("from")> will remove
-the C<from> option from the key meta info.
-
 =item C<type>
 
-Type of ssh key, either C<"ssh-1"> or C<"ssh-2">.
-
-=item C<email>
-
-Email address of the person who created the key. (Different from 
-the "from" option).
+Type of ssh key, usually C<"ssh-1">.
 
 =item C<key>
 
@@ -317,16 +214,18 @@ Length of the key in bit (e.g. 1024).
 
 =item C<exponent>
 
-Two-digit number in front of the key in ssh-1 keys.
+Two-digit number in front of the key in ssh-1 authorized_keys lines.
+
+=item C<options>
+
+Returns a reference to a hash with options key/value pairs, listed in 
+front of the key.
 
 =back
 
-Calling a method will return C<undef> if the corresponding entry doesn't
-exist in the key meta data.
-
 =head1 LEGALESE
 
-Copyright 2005 by Mike Schilli, all rights reserved.
+Copyright 2005-2009 by Mike Schilli, all rights reserved.
 This program is free software, you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
