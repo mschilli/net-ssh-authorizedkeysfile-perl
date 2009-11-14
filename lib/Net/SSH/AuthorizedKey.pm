@@ -19,7 +19,7 @@ do {
             " implemented by a real subclass.";
     };
 
-} for qw(option_type as_string parse);
+} for qw(option_type as_string);
 
 ###########################################
 sub option_valid {
@@ -95,6 +95,27 @@ sub option_quote {
 
     $text =~ s/([\\"])/\\$1/g;
     return "$option=\"" . $text . "\"";
+}
+
+###########################################
+sub parse {
+###########################################
+    my($class, $string) = @_;
+
+    my @subclasses = qw(
+        Net::SSH::AuthorizedKey::SSH1
+        Net::SSH::AuthorizedKey::SSH2
+    );
+
+    for my $subclass ( @subclasses ) {
+        my $pk = $subclass->parse( $string );
+        if($pk) {
+            DEBUG "Successfully parsed $subclass key";
+            return $pk;
+        }
+    }
+
+    return undef;
 }
 
 ##################################################
