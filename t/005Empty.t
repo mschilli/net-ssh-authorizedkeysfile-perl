@@ -10,7 +10,7 @@ use Sysadm::Install qw(:all);
 use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init($DEBUG);
 
-use Test::More tests => 5;
+use Test::More tests => 3;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 
 my $tdir = "t";
@@ -23,10 +23,7 @@ my $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/pk-ssh2.txt");
 $ak->read();
 
 my @keys = $ak->keys();
-
-is $keys[0]->type(), "ssh-2", "type";
-is $keys[0]->comment(), "rsa-key-20090703", "comment";
-like $keys[0]->key(), qr/^AAAA.*X==/, "key";
+is((scalar @keys), 0, "no keys found");
 
 $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/pk-empty.txt");
 $ak->read();
