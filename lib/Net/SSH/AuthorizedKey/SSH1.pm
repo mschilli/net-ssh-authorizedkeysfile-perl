@@ -3,7 +3,8 @@ package Net::SSH::AuthorizedKey::SSH1;
 ###########################################
 use strict;
 use warnings;
-use base qw(Net::SSH::AuthorizedKey);
+use Net::SSH::AuthorizedKey::Base;
+use base qw(Net::SSH::AuthorizedKey::Base);
 use Log::Log4perl qw(:easy);
 
 our @REQUIRED_FIELDS = qw(
@@ -17,18 +18,8 @@ our @OPTIONAL_FIELDS = qw(
 __PACKAGE__->make_accessor( $_ ) for 
    (@REQUIRED_FIELDS, @OPTIONAL_FIELDS);
 
-our %VALID_OPTIONS = (
-    "no-port-forwarding"  => 1,
-    "no-agent-forwarding" => 1,
-    "no-x11-forwarding"   => 1,
-    "no-pty"              => 1,
-    "no-user-rc"          => 1,
-    command               => "s",
-    environment           => "s",
-    from                  => "s",
-    permitopen            => "s",
-    tunnel                => "s",
-);
+  # No additional options, only global ones
+our %VALID_OPTIONS = ();
 
 ###########################################
 sub new {
@@ -46,42 +37,9 @@ sub new {
 }
 
 ###########################################
-sub parse {
-###########################################
-    my($class, $string) = @_;
-
-    # We assume whitespace and comments have been cleaned up
-
-    if(my $key = key_read( $string ) ) {
-          # We found a type-1 key without options
-        $key->{options} = {};
-        DEBUG "Found ssh-1 key: ", $key->as_string();
-        return $key;
-    }
-
-    # No key found. Probably there are options in front of the key.
-    # The openssh-5 parser doesn't allow escaped backslashes (\\), 
-    # so we don't either.
-    (my $key_string = $string) =~ s/\s|
-                                    "(\\"|.)*?"
-                                   //gx;
-
-    if(my $key = key_read( $string ) ) {
-          # We found a type-1 key with options
-        $key->{options} = $key->options_parse( $string );
-        DEBUG "Found ssh-1 key: ", $key->as_string();
-        return $key;
-    }
-
-    DEBUG "Cannot parse line: $string";
-
-    return undef;
-}
-
-###########################################
 sub key_read {
 ############################################
-    my($line) = @_;
+    my($class, $line) = @_;
 
     if($line !~ s/^(\d+)\s*//) {
         return undef;

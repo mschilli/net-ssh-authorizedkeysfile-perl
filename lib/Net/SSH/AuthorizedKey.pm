@@ -5,98 +5,6 @@ use strict;
 use warnings;
 use Log::Log4perl qw(:easy);
 
-  # Accessors common for both ssh1 and ssh2 keys
-our @accessors = qw(options key type encryption);
-our %accessors = map { $_ => 1 } @accessors;
-__PACKAGE__->make_accessor( $_ ) for @accessors;
-
-  # Some functions must be implemented in the subclass
-do {
-    no strict qw(refs);
-
-    *{__PACKAGE__ . "::$_"} = sub {
-        die "Whoa! '$_' in the virtual base class has to be ",
-            " implemented by a real subclass.";
-    };
-
-} for qw(option_type as_string);
-
-###########################################
-sub option_valid {
-###########################################
-    my($self, $key) = @_;
-
-    return $self->option_type($key);
-}
-
-###########################################
-sub option {
-###########################################
-    my($self, $key, $value) = @_;
-
-    $key = lc $key;
-
-    my $option_type = $self->option_type($key);
-
-    if(! defined $option_type) {
-        LOGWARN "Illegal option '$key'";
-        return undef;
-    }
-
-    if(defined $value) {
-        if($option_type eq "s") {
-            $self->{options}->{$key} = $value;
-        } else {
-            $self->{options}->{$key} = undef;
-        }
-    }
-
-    return $self->{options}->{$key};
-}
-
-###########################################
-sub option_delete {
-###########################################
-    my($self, $key) = @_;
-
-    $key = lc $key;
-
-    delete $self->{options}->{$key};
-}
-
-###########################################
-sub options_as_string {
-###########################################
-    my($self) = @_;
-
-    my $string = "";
-    my @parts  = ();
-
-    for my $option ( keys %{ $self->{options} } ) {
-        if(defined $self->{options}->{$option}) {
-            if(ref($self->{options}->{$option}) eq "ARRAY") {
-                for (@{ $self->{options}->{$option} }) {
-                    push @parts, option_quote($option, $_);
-                }
-            } else {
-                push @parts, option_quote($option, $self->{options}->{$option});
-            }
-        } else {
-            push @parts, $option;
-        }
-    }
-    return join(',', @parts);
-}
-
-###########################################
-sub option_quote {
-###########################################
-    my($option, $text) = @_;
-
-    $text =~ s/([\\"])/\\$1/g;
-    return "$option=\"" . $text . "\"";
-}
-
 ###########################################
 sub parse {
 ###########################################
@@ -116,34 +24,6 @@ sub parse {
     }
 
     return undef;
-}
-
-##################################################
-# Poor man's Class::Struct
-##################################################
-sub make_accessor {
-##################################################
-    my($package, $name) = @_;
-
-    no strict qw(refs);
-
-    my $code = <<EOT;
-        *{"$package\\::$name"} = sub {
-            my(\$self, \$value) = \@_;
-
-            if(defined \$value) {
-                \$self->{$name} = \$value;
-            }
-            if(exists \$self->{$name}) {
-                return (\$self->{$name});
-            } else {
-                return "";
-            }
-        }
-EOT
-    if(! defined *{"$package\::$name"}) {
-        eval $code or die "$@";
-    }
 }
 
 1;

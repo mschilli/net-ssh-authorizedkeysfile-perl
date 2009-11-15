@@ -1,6 +1,7 @@
 #
 # Test cases for ssh1 keys
 #
+use Net::SSH::AuthorizedKey;
 use Net::SSH::AuthorizedKey::SSH1;
 use Test::More;
 use Log::Log4perl qw(:easy);
