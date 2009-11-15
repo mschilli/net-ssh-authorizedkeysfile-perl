@@ -67,6 +67,17 @@ sub read {
             push @{ $self->{keys} }, $pk;
         } else {
             WARN "Key [$line_string] failed sanity check -- ignored";
+            if($self->{strict}) {
+                WARN "Strict mode on: Abort";
+                if(defined $pk) {
+                    $self->error( $pk->error() );
+                } else {
+                    $self->error( "Invalid line: [$line_string] " .
+                                  "rejected by all parsers" );
+                }
+                close FILE;
+                return undef;
+            }
         }
     }
 
@@ -96,10 +107,26 @@ sub save {
         $file = $self->{file};
     }
 
-    open FILE, ">$file" or 
-        LOGDIE "Cannot open $file ($!)";
+    if(! open FILE, ">$file") {
+        $self->error("Cannot open $file ($!)");
+        WARN $self->error();
+        return undef;
+    }
+
     print FILE $self->as_string();
     close FILE;
+}
+
+###########################################
+sub error {
+###########################################
+    my($self, $text) = @_;
+
+    if(defined $text) {
+        $self->{error} = $text;
+    }
+
+    return $self->{error};
 }
 
 1;
@@ -130,7 +157,7 @@ Net::SSH::AuthorizedKeysFile - Read and modify ssh's authorized_keys files
         $key->keylen(1025);
     }
         # Save changes back to $HOME/.ssh/authorized_keys
-    $akf->save();
+    $akf->save() or die "Cannot save";
 
 =head1 DESCRIPTION
 
@@ -152,6 +179,22 @@ overridden with
 
     Net::SSH::AuthorizedKeysFile->new( file => "/path/other_authkeys_file" );
 
+Normally, the C<read> method described below will just silently ignore 
+faulty lines and only gobble up keys that either one of the two parsers
+accepts. If you want it to be stricter, set
+
+    Net::SSH::AuthorizedKeysFile->new( file   => "authkeys_file",
+                                       strict => 1 );
+
+and read will immediately abort after the first faulty line.
+
+=item C<read>
+
+Reads in the file defined by new(). By default, strict mode is off and 
+read() will silently ignore faulty lines. If it's on (see new() above),
+read() will immediately abort after the first faulty line. A textual
+description of the last error will be available via error().
+
 =item C<keys>
 
 Returns a list of Net::SSH::AuthorizedKey objects. Methods are described in
@@ -170,6 +213,12 @@ method described above. Note that comments from the original file are lost.
 Optionally takes a file
 name parameter, so calling C<$akf-E<gt>save("foo.txt")> will save the data
 in the file "foo.txt" instead of the file the data was read from originally.
+Returns 1 if successful, and undef on error. In case of an error, error()
+contains a textual error description.
+
+=item C<error>
+
+Description of last error that occurred.
 
 =back
 

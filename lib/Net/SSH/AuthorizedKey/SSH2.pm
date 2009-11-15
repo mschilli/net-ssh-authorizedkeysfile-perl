@@ -91,6 +91,7 @@ sub key_read {
     DEBUG "Parsed encryption $encryption";
 
     if($line !~ s/^(\S+)\s*//) {
+        DEBUG "No SSH2 key found";
         return undef;
     }
 
@@ -115,7 +116,7 @@ sub sanity_check {
 
     for my $field (@REQUIRED_FIELDS) {
         if(! length $self->$field()) {
-            WARN "Sanity check failed '$field' requirement";
+            WARN "ssh-2 sanity check failed '$field' requirement";
             return undef;
         }
     }

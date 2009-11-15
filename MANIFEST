@@ -1,6 +1,9 @@
 Changes
 eg/authorized-keys-test
 lib/Net/SSH/AuthorizedKey.pm
+lib/Net/SSH/AuthorizedKey/Base.pm
+lib/Net/SSH/AuthorizedKey/SSH1.pm
+lib/Net/SSH/AuthorizedKey/SSH2.pm
 lib/Net/SSH/AuthorizedKeysFile.pm
 Makefile.PL
 MANIFEST			This list of files
@@ -10,8 +13,10 @@ t/001Basic.t
 t/002Ssh-2.t
 t/003Format.t
 t/004Mixed.t
-t/005MultiLine.t
+t/005Empty.t
 t/006Broken.t
+t/007ssh-1.t
+t/008ssh-2.t
 t/canned/ak-broken.txt
 t/canned/ak-comments.txt
 t/canned/ak-manpage.txt

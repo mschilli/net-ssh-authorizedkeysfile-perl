@@ -7,7 +7,7 @@ use Log::Log4perl qw(:easy);
 use Text::ParseWords;
 
   # Accessors common for both ssh1 and ssh2 keys
-our @accessors = qw(options key type encryption error email comment);
+our @accessors = qw(options key type error email comment);
 __PACKAGE__->make_accessor( $_ ) for @accessors;
 
   # Some functions must be implemented in the subclass
@@ -243,11 +243,44 @@ Net::SSH::AuthorizedKey::Base - Virtual Base Class for ssh keys
 
 =head1 SYNOPSIS
 
-    # Don't use it. It's just used internally.
+    # Documentation to understand methods shared
+    # by all parsers. Not for direct use.
 
 =head1 DESCRIPTION
 
-Don't use it. It's just used internally.
+This is the key parser base class, offering methods common to all
+parsers. Don't use it directly, but read the documentation below to
+see what functionality all parsers offer.
+
+=over 4
+
+=item error()
+
+If a parser fails for any reason, it will leave a textual description of
+the error that threw it off. This methods retrieves the error text.
+
+=item options()
+
+=item key()
+
+The actual content of the key, either a big number in case of ssh-1 or
+a base64-encoded string for ssh-2.
+
+=item type()
+
+Type of a key. (Somewhat redundant, as you could also check what subclass
+a key is of). Either set to C<"ssh-1"> or C<"ssh-2">.
+
+=item email()
+
+Identical with comment().
+
+=item comment()
+
+Identical with email(). This is the text that follows in the authorized_keys
+file after the key content. Mostly used for emails and host names.
+
+=back
 
 =head1 LEGALESE
 

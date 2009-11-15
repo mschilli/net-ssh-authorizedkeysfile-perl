@@ -30,6 +30,7 @@ sub key_read {
     my($class, $line) = @_;
 
     if($line !~ s/^(\d+)\s*//) {
+        DEBUG "Cannot find ssh-1 keylen";
         return undef;
     }
 
@@ -37,6 +38,7 @@ sub key_read {
     DEBUG "Parsed keylen: $keylen";
 
     if($line !~ s/^(\d+)\s*//) {
+        DEBUG "Cannot find ssh-1 exponent";
         return undef;
     }
 
@@ -44,6 +46,7 @@ sub key_read {
     DEBUG "Parsed exponent: $exponent";
 
     if($line !~ s/^(\d+)\s*//) {
+        DEBUG "Cannot find ssh-1 key";
         return undef;
     }
 
@@ -81,7 +84,7 @@ sub sanity_check {
 
     for my $field (@REQUIRED_FIELDS) {
         if(! length $self->$field()) {
-            WARN "Sanity check failed '$field' requirement";
+            WARN "ssh-1 sanity check failed '$field' requirement";
             return undef;
         }
     }
@@ -137,8 +140,9 @@ data, and returns a Net::SSH::AuthorizedKey::SSH1 object which offers
 accessors for all relevant fields and a as_string() method to assemble 
 it back together as a string.
 
-Net::SSH::AuthorizedKey::SSH1 is a subclass of Net::SSH::AuthorizedKey,
-which offers methods to control key option settings.
+Net::SSH::AuthorizedKey::SSH1 is a subclass of Net::SSH::AuthorizedKey::Base,
+which offers methods like error() and helpers to control key option 
+settings. 
 
 =head2 FIELDS
 

@@ -11,7 +11,7 @@ use File::Temp qw(tempfile);
 use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init($DEBUG);
 
-use Test::More tests => 4;
+use Test::More tests => 7;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 
 my $tdir = "t";
@@ -20,17 +20,30 @@ my $cdir = "$tdir/canned";
 
 use Net::SSH::AuthorizedKeysFile;
 
-my $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-broken.txt");
+my $ak = Net::SSH::AuthorizedKeysFile->new(
+    file => "$cdir/ak-broken.txt",
+);
 my $rc = $ak->read();
+is($rc, 1, "read ok on broken authorized_keys (no strict)");
 
-is($rc, undef, "read fail on broken authorized_keys");
+$ak = Net::SSH::AuthorizedKeysFile->new(
+    file   => "$cdir/ak-broken.txt",
+    strict => 1,
+);
+$rc = $ak->read();
+is($rc, undef, "read fail on broken authorized_keys (strict)");
+is($ak->error(), "Invalid line: [ene mene meck] rejected by all parsers", 
+                 "error message");
 
 $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak.txt");
 $rc = $ak->read();
 
 is($rc, 1, "read ok on ok authorized_keys");
 
-$ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-broken.txt");
+$ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-broken.txt",
+                                        strict => 1);
 $rc = $ak->read();
 
 is($rc, undef, "read fail on broken authorized_keys");
+is($ak->error(), "Invalid line: [ene mene meck] rejected by all parsers", 
+                 "error message");
