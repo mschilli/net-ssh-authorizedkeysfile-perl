@@ -2,6 +2,9 @@
 Revision history for Perl extension Net::SSH::AuthorizedKeysFile
 ######################################################################
 
+0.10  2009/11/15
+    (ms) Complete rewrite of parsers and classes
+
 0.06  2009/10/20
     (ms) new() no longer reads the configuration file
          automatically, read() must be called separately. This breaks

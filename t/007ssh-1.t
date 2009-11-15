@@ -10,9 +10,9 @@ use Log::Log4perl qw(:easy);
 
 plan tests => 12;
 
-my $t1key = "1042 17 123123123";
+my $t1key = " 1042 17 123123123";
 
-  # baseclass
+  # direct
 my $pk = Net::SSH::AuthorizedKey::SSH1->parse($t1key);
 
 is($pk->keylen(), "1042", "keylen");
@@ -22,7 +22,7 @@ is($pk->email(), "", "email");
 is($pk->type(), "ssh-1", "type");
 ok($pk->sanity_check(), "sanity check");
 
-  # superclass
+  # generic
 $pk = Net::SSH::AuthorizedKey->parse($t1key);
 
 is($pk->keylen(), "1042", "keylen");

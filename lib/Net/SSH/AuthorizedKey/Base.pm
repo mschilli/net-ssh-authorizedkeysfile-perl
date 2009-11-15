@@ -4,6 +4,7 @@ package Net::SSH::AuthorizedKey::Base;
 use strict;
 use warnings;
 use Log::Log4perl qw(:easy);
+use Text::ParseWords;
 
   # Accessors common for both ssh1 and ssh2 keys
 our @accessors = qw(options key type encryption error email);
@@ -155,13 +156,19 @@ sub parse {
     # No key found. Probably there are options in front of the key.
     # By the way: the openssh-5.x parser doesn't allow escaped 
     # backslashes (\\), so we don't either.
-    (my $key_string = $string) =~ s/\s|
-                                    "(\\"|.)*?"
-                                   //gx;
+    (my $key_string = $string) =~ s/^(\S|
+                                      "(?:\\"|.)*?"
+                                     )+
+                                   //x;
+    my $options_string =  $&;
+    $key_string        =~ s/^\s+//;
 
-    if(my $key = $class->key_read( $string ) ) {
+    DEBUG "Trying line with options stripped: [$key_string]";
+
+    if(my $key = $class->key_read( $key_string ) ) {
           # We found a key with options
-        $key->{options} = $key->options_parse( $string );
+        $key->{options} = {};
+        $key->options_parse( $options_string, $key->{options} );
         DEBUG "Found ", $key->type(), " key: ", $key->as_string();
         return $key;
     }
@@ -169,6 +176,32 @@ sub parse {
     DEBUG "$class cannot parse line: $string";
 
     return undef;
+}
+
+###########################################
+sub options_parse {
+###########################################
+    my($self, $string, $option_hash) = @_;
+
+    DEBUG "Parsing options: [$string]";
+    my @options = parse_line(qr/\s*,\s*/, 0, $string);
+    DEBUG "Parsed options: ", join(' ', map { "[$_]" } @options);
+
+    for my $option (@options) {
+        my($key, $value) = split /=/, $option, 2;
+        $value = 1 unless defined $value;
+        $value =~ s/^"(.*)"$/$1/; # remove quotes
+
+        if(exists $option_hash->{$key}) {
+            DEBUG "Option $key already set, adding [$value] to array";
+            $option_hash->{$key} = [ $option_hash->{$key} ] if 
+            ref($option_hash->{$key}) ne "ARRAY";
+            push @{ $option_hash->{$key} }, $value;
+        } else {
+            DEBUG "Setting option $key to $value";
+            $option_hash->{$key} = $value;
+        }
+    }
 }
 
 ##################################################
