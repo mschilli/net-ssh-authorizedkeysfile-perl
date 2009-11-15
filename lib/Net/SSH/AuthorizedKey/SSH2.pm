@@ -7,6 +7,14 @@ use base qw(Net::SSH::AuthorizedKey::Base);
 use Log::Log4perl qw(:easy);
 
 ###########################################
+sub new {
+###########################################
+    my($class, %options) = @_;
+
+    return $class->SUPER::new( type => "ssh-1" );
+}
+
+###########################################
 sub as_string {
 ###########################################
     my($self) = @_;

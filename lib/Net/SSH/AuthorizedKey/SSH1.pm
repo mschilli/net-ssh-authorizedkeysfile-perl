@@ -26,14 +26,7 @@ sub new {
 ###########################################
     my($class, %options) = @_;
 
-    my $self = {
-        type  => "ssh-1",
-        error => "(no error)",
-        %options,
-    };
-
-    bless $self, $class;
-    return $self;
+    return $class->SUPER::new( type => "ssh-1" );
 }
 
 ###########################################

@@ -36,6 +36,20 @@ our %VALID_OPTIONS = (
 );
 
 ###########################################
+sub new {
+###########################################
+    my($class, %options) = @_;
+
+    my $self = {
+        error => "(no error)",
+        %options,
+    };
+
+    bless $self, $class;
+    return $self;
+}
+
+###########################################
 sub option_type_global {
 ###########################################
     my($self, $key) = @_;
