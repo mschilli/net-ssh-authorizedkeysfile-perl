@@ -5,7 +5,6 @@
 
 use warnings;
 use strict;
-use Sysadm::Install qw(:all);
 use File::Temp qw(tempfile);
 
 use Log::Log4perl qw(:easy);

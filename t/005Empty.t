@@ -5,7 +5,6 @@
 
 use warnings;
 use strict;
-use Sysadm::Install qw(:all);
 
 use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init($DEBUG);

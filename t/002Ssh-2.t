@@ -5,9 +5,9 @@
 
 use warnings;
 use strict;
-use Sysadm::Install qw(:all);
 use File::Temp qw(tempfile);
 use Log::Log4perl qw(:easy);
+use File::Copy;
 # Log::Log4perl->easy_init($DEBUG);
 
 use Test::More tests => 10;
@@ -35,7 +35,7 @@ is($keys[1]->email(), 'bar@foo.com', "key");
 
 # modify a ssh-2 key
 my($fh, $filename) = tempfile();
-cp "$cdir/ak-ssh2.txt", $filename;
+copy "$cdir/ak-ssh2.txt", $filename;
 $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-ssh2.txt");
 $ak->read();
 

@@ -5,7 +5,6 @@
 
 use warnings;
 use strict;
-use Sysadm::Install qw(:all);
 
 #use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init($DEBUG);
@@ -38,3 +37,13 @@ $ak->read();
 @keys = $ak->keys();
 is(scalar @keys, 1, "1 key found");
 is($keys[0]->email(), 'bozo@quack.schmack.com', "email4");
+
+
+###########################################
+sub slurp {
+###########################################
+    open FILE, "$_[0]" or die $!;
+    my $data = join "", <FILE>;
+    close FILE;
+    return $data;
+}
