@@ -1,0 +1,8 @@
+vi -p \
+lib/Net/SSH/AuthorizedKey/SSH1.pm \
+lib/Net/SSH/AuthorizedKey/SSH2.pm \
+lib/Net/SSH/AuthorizedKey/Base.pm \
+lib/Net/SSH/AuthorizedKey.pm \
+lib/Net/SSH/AuthorizedKeysFile.pm \
+
+
