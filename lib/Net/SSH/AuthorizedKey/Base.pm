@@ -7,7 +7,7 @@ use Log::Log4perl qw(:easy);
 use Text::ParseWords;
 
   # Accessors common for both ssh1 and ssh2 keys
-our @accessors = qw(options key type encryption error email);
+our @accessors = qw(options key type encryption error email comment);
 __PACKAGE__->make_accessor( $_ ) for @accessors;
 
   # Some functions must be implemented in the subclass
@@ -156,10 +156,11 @@ sub parse {
     # No key found. Probably there are options in front of the key.
     # By the way: the openssh-5.x parser doesn't allow escaped 
     # backslashes (\\), so we don't either.
-    (my $key_string = $string) =~ s/^(\S|
-                                      "(?:\\"|.)*?"
-                                     )+
-                                   //x;
+    (my $key_string = $string) =~ s/^(
+                                  (?:"(?:\\"|.)*?)"|
+                                  \S
+                                )+
+                               //x;
     my $options_string =  $&;
     $key_string        =~ s/^\s+//;
 

@@ -31,7 +31,7 @@ is($keys[1]->option('from'),
    '*.sales.example.net,!pc.sales.example.net', "from with comma");
 is($keys[1]->option('From'), 
    '*.sales.example.net,!pc.sales.example.net', "from case insensitive");
-is($keys[1]->comment(), 'john@example.net', "comment");
+is($keys[1]->email(), 'john@example.net', "comment");
 
 #command="dump /home",no-pty,no-port-forwarding ssh-dss AAAAC3...51R== example.net
 is($keys[2]->option('command'), 'dump /home', "options including blank");

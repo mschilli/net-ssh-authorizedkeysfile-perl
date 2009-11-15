@@ -19,6 +19,7 @@ sub parse {
     );
 
     for my $subclass ( @subclasses ) {
+        DEBUG "Parsing with $subclass: $string";
         my $pk = $subclass->parse( $string );
         if($pk) {
             DEBUG "Successfully parsed $subclass key";

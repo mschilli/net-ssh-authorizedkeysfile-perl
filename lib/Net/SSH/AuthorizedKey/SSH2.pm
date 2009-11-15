@@ -42,32 +42,6 @@ sub as_string {
 }
 
 ###########################################
-sub parse {
-###########################################
-    my($self, $string) = @_;
-
-    DEBUG "Parsing key [$string]";
-
-    # Multi-line:
-    #    Comment: "rsa-key-20090703"
-    # or single line:
-    #    tunnel="0",command="sh /etc/netstart tun0" ssh-rsa AAAA...
-
-    if($string =~ /\A\s*\Z/s) {
-        WARN "Empty multi-line string ignored";
-        return undef;
-    }
-
-      # check for a newline followed by a character to determine
-      # if it's multi-line or single-line.
-    if($string =~ /\n./) {
-        return $self->parse_multi_line( $string );
-    }
-
-    return $self->key_read( $string );
-}
-
-###########################################
 sub parse_multi_line {
 ###########################################
     my($self, $string) = @_;
@@ -123,17 +97,13 @@ sub key_read {
     my $key = $1;
     DEBUG "Parsed key $key";
 
-    my $email = "";
-
-    if($line =~ s/^(\S+)\s*//) {
-        $email = $1;
-        DEBUG "Parsed email $email";
-    }
+    my $email = $line;
 
     my $obj = __PACKAGE__->new();
     $obj->encryption( $encryption );
     $obj->key( $key );
     $obj->email( $email );
+    $obj->comment( $email );
 
     return $obj;
 }

@@ -55,6 +55,7 @@ sub key_read {
     $obj->key( $key );
     $obj->exponent( $exponent );
     $obj->email( $line );
+    $obj->comment( $line );
 
     return $obj;
 }
