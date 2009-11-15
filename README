@@ -1,5 +1,5 @@
 ######################################################################
-    Net::SSH::AuthorizedKeysFile 0.06
+    Net::SSH::AuthorizedKeysFile 0.10
 ######################################################################
 
 NAME
@@ -25,7 +25,7 @@ SYNOPSIS
             $key->keylen(1025);
         }
             # Save changes back to $HOME/.ssh/authorized_keys
-        $akf->save();
+        $akf->save() or die "Cannot save";
 
 DESCRIPTION
     Net::SSH::AuthorizedKeysFile reads and modifies "authorized_keys" files.
@@ -41,6 +41,21 @@ METHODS
 
             Net::SSH::AuthorizedKeysFile->new( file => "/path/other_authkeys_file" );
 
+        Normally, the "read" method described below will just silently
+        ignore faulty lines and only gobble up keys that either one of the
+        two parsers accepts. If you want it to be stricter, set
+
+            Net::SSH::AuthorizedKeysFile->new( file   => "authkeys_file",
+                                               strict => 1 );
+
+        and read will immediately abort after the first faulty line.
+
+    "read"
+        Reads in the file defined by new(). By default, strict mode is off
+        and read() will silently ignore faulty lines. If it's on (see new()
+        above), read() will immediately abort after the first faulty line. A
+        textual description of the last error will be available via error().
+
     "keys"
         Returns a list of Net::SSH::AuthorizedKey objects. Methods are
         described in Net::SSH::AuthorizedKey.
@@ -55,7 +70,12 @@ METHODS
         method described above. Note that comments from the original file
         are lost. Optionally takes a file name parameter, so calling
         "$akf->save("foo.txt")" will save the data in the file "foo.txt"
-        instead of the file the data was read from originally.
+        instead of the file the data was read from originally. Returns 1 if
+        successful, and undef on error. In case of an error, error()
+        contains a textual error description.
+
+    "error"
+        Description of last error that occurred.
 
 LEGALESE
     Copyright 2005-2009 by Mike Schilli, all rights reserved. This program
