@@ -6,8 +6,7 @@ use warnings;
 use Log::Log4perl qw(:easy);
 
   # Accessors common for both ssh1 and ssh2 keys
-our @accessors = qw(options key type encryption);
-our %accessors = map { $_ => 1 } @accessors;
+our @accessors = qw(options key type encryption error email);
 __PACKAGE__->make_accessor( $_ ) for @accessors;
 
   # Some functions must be implemented in the subclass
@@ -135,10 +134,19 @@ sub parse {
 ###########################################
     my($class, $string) = @_;
 
-    # We assume whitespace and comments have been cleaned up
+    DEBUG "Parsing line '$string'";
+
+    # Clean up leading whitespace
+    $string =~ s/^\s+//;
+    $string =~ s/^#.*//;
+ 
+    if(! length $string) {
+        DEBUG "Nothing to parse";
+        return;
+    }
 
     if(my $key = $class->key_read( $string ) ) {
-          # We found a type-1 key without options
+          # We found a key without options
         $key->{options} = {};
         DEBUG "Found ", $key->type(), " key: ", $key->as_string();
         return $key;
@@ -152,7 +160,7 @@ sub parse {
                                    //gx;
 
     if(my $key = $class->key_read( $string ) ) {
-          # We found a type-1 key with options
+          # We found a key with options
         $key->{options} = $key->options_parse( $string );
         DEBUG "Found ", $key->type(), " key: ", $key->as_string();
         return $key;
@@ -197,68 +205,15 @@ __END__
 
 =head1 NAME
 
-Net::SSH::AuthorizedKey::SSH1 - SSH version 1 public keys
+Net::SSH::AuthorizedKey::Base - Virtual Base Class for ssh keys
 
 =head1 SYNOPSIS
 
-    use Net::SSH::AuthorizedKey::SSH1;
-
-      # Either parse a string (without leading whitespace or comments):
-    my $pubkey = Net::SSH::AuthorizedKey::SSH1->parse( $string );
-
-      # ... or create an object yourself:
-    my $pubkey = Net::SSH::AuthorizedKey->new(
-        options  => { from                  => 'foo@bar.com', 
-                      "no-agent-forwarding" => 1 },
-        key      => "123....890",
-        keylen   => 1024,
-        exponent => 35,
-        type     => "ssh-1",
-    );
+    # Don't use it. It's just used internally.
 
 =head1 DESCRIPTION
 
-Net::SSH::AuthorizedKey::SSH1 objects hold ssh version 1 public keys,
-typically extracted from an authorized_keys file. 
-
-The C<parse()> method takes a line from an authorized_keys file (leading
-whitespace and comments need to be cleaned up beforehand), parses the
-data, and returns a Net::SSH::AuthorizedKey::SSH1 object which offers
-accessors for all relevant fields and a as_string() method to assemble 
-it back together as a string.
-
-Net::SSH::AuthorizedKey::SSH1 is a subclass of Net::SSH::AuthorizedKey,
-which offers methods to control key option settings.
-
-=head2 FIELDS
-
-All of the following fields are available via accessors:
-
-=over 4
-
-=item C<type>
-
-Type of ssh key, usually C<"ssh-1">.
-
-=item C<key>
-
-Public key, either a long number (ssh-1) or a line of alphanumeric
-characters.
-
-=item C<keylen>
-
-Length of the key in bit (e.g. 1024).
-
-=item C<exponent>
-
-Two-digit number in front of the key in ssh-1 authorized_keys lines.
-
-=item C<options>
-
-Returns a reference to a hash with options key/value pairs, listed in 
-front of the key.
-
-=back
+Don't use it. It's just used internally.
 
 =head1 LEGALESE
 

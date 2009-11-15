@@ -5,6 +5,9 @@ use strict;
 use warnings;
 use Log::Log4perl qw(:easy);
 
+use Net::SSH::AuthorizedKey::SSH1;
+use Net::SSH::AuthorizedKey::SSH2;
+
 ###########################################
 sub parse {
 ###########################################

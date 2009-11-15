@@ -3,15 +3,28 @@ package Net::SSH::AuthorizedKey::SSH2;
 ###########################################
 use strict;
 use warnings;
+use Net::SSH::AuthorizedKey::Base;
 use base qw(Net::SSH::AuthorizedKey::Base);
 use Log::Log4perl qw(:easy);
+
+  # No additional options, only global ones
+our %VALID_OPTIONS = ();
+
+our $KEYTYPE_REGEX = qr/rsa|dsa|ssh-rsa|ssh-dss/;
+
+our @REQUIRED_FIELDS = qw(
+    encryption
+);
+
+__PACKAGE__->make_accessor( $_ ) for 
+   (@REQUIRED_FIELDS);
 
 ###########################################
 sub new {
 ###########################################
     my($class, %options) = @_;
 
-    return $class->SUPER::new( type => "ssh-1" );
+    return $class->SUPER::new( %options, type => "ssh-2" );
 }
 
 ###########################################
@@ -22,7 +35,8 @@ sub as_string {
     my $string = $self->options_as_string();
     $string .= " " if length $string;
 
-    $string .= "$self->{encryption} $self->{key} $self->{email}";
+    $string .= "$self->{encryption} $self->{key}";
+    $string .= " $self->{email}" if length $self->{email};
 
     return $string;
 }
@@ -50,7 +64,7 @@ sub parse {
         return $self->parse_multi_line( $string );
     }
 
-    return $self->parse_single_line( $string );
+    return $self->key_read( $string );
 }
 
 ###########################################
@@ -90,11 +104,38 @@ sub parse_multi_line {
 }
 
 ###########################################
-sub parse_single_line {
-###########################################
-    my($self, $string) = @_;
+sub key_read {
+############################################
+    my($class, $line) = @_;
 
-    die "Whoa, not implemented!";
+    if($line !~ s/^($KEYTYPE_REGEX)\s*//) {
+        DEBUG "No SSH2 keytype found";
+        return undef;
+    }
+
+    my $encryption = $1;
+    DEBUG "Parsed encryption $encryption";
+
+    if($line !~ s/^(\S+)\s*//) {
+        return undef;
+    }
+
+    my $key = $1;
+    DEBUG "Parsed key $key";
+
+    my $email = "";
+
+    if($line =~ s/^(\S+)\s*//) {
+        $email = $1;
+        DEBUG "Parsed email $email";
+    }
+
+    my $obj = __PACKAGE__->new();
+    $obj->encryption( $encryption );
+    $obj->key( $key );
+    $obj->email( $email );
+
+    return $obj;
 }
 
 ###########################################
@@ -102,15 +143,26 @@ sub sanity_check {
 ###########################################
     my($self) = @_;
 
-    my @fields = qw(key);
-
-    for my $field (@fields) {
-        if(! defined $self->$field()) {
+    for my $field (@REQUIRED_FIELDS) {
+        if(! length $self->$field()) {
             WARN "Sanity check failed '$field' requirement";
             return undef;
         }
     }
+
     return 1;
+}
+
+###########################################
+sub option_type {
+###########################################
+    my($self, $option) = @_;
+
+    if(exists $VALID_OPTIONS{ $option }) {
+        return $VALID_OPTIONS{ $option };
+    }
+
+    return undef;
 }
 
 1;

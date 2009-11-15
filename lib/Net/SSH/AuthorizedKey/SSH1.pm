@@ -8,15 +8,10 @@ use base qw(Net::SSH::AuthorizedKey::Base);
 use Log::Log4perl qw(:easy);
 
 our @REQUIRED_FIELDS = qw(
-    keylen exponent key options
+    keylen exponent
 );
 
-our @OPTIONAL_FIELDS = qw(
-    error email
-);
-
-__PACKAGE__->make_accessor( $_ ) for 
-   (@REQUIRED_FIELDS, @OPTIONAL_FIELDS);
+__PACKAGE__->make_accessor( $_ ) for @REQUIRED_FIELDS;
 
   # No additional options, only global ones
 our %VALID_OPTIONS = ();
@@ -26,7 +21,7 @@ sub new {
 ###########################################
     my($class, %options) = @_;
 
-    return $class->SUPER::new( type => "ssh-1" );
+    return $class->SUPER::new( %options, type => "ssh-1" );
 }
 
 ###########################################
