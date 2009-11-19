@@ -13,6 +13,12 @@ WriteMakefile(
         File::Temp       => 0,
         File::Copy       => 0,
     }, # e.g., Module::Name => 1.1
+    META_MERGE          => {
+        resources       => {
+            repository  => 
+              'http://github.com/mschilli/net-ssh-authorizedkeysfile-perl',
+        },
+    },
     'EXE_FILES'    => [ 'eg/authorized-keys-test' ],
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM => 'lib/Net/SSH/AuthorizedKeysFile.pm',

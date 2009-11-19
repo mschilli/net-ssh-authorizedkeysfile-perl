@@ -4,6 +4,7 @@ Revision history for Perl extension Net::SSH::AuthorizedKeysFile
 
 0.11  (not yet released)
     (ms) Documentation fixes
+    (ms) Added github repo link to Makefile.PL
 
 0.10  2009/11/15
     (ms) Complete rewrite of parsers and classes
