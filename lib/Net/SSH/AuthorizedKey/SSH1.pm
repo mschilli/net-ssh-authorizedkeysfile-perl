@@ -174,25 +174,6 @@ front of the key.
 
 =back
 
-=head2 Implementation Reference
-
-The key parsers implemented in this distribution are implemented similarily
-as the authorized_keys file parser in the openssh source distribution.
-
-Openssh contains the authorized_keys parser
-in its auth2_pubkey.c file. The user_key_allowed2() function opens
-the file and reads it line by line, ignoring leading whitespace, empty
-and comment lines.
-
-After that, if a line doesn't contain a plain key, the parser skips ahead until
-the first whitespace (zooming through quoted areas "..." and interpreting '\"'
-as an escaped quote), then skips this whitespace and tries to read a key one
-more time. 
-
-Regarding options, the Perl parser isn't as elaborate with semantic 
-peculiarities as openssh's auth_parse_options(), but this might be
-added in the future.
-
 =head1 LEGALESE
 
 Copyright 2005-2009 by Mike Schilli, all rights reserved.
