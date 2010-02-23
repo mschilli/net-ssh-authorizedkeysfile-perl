@@ -63,7 +63,7 @@ recognizes either a ssh-1 or a ssh-2 type key, it will return a
 Net::SSH::AuthorizedKey::SSH1 or a Net::SSH::AuthorizedKey::SSH2 object.
 See their manual pages for instructions on how to use them.
 
-=HEAD2 IMPLEMENTATION REFERENCE
+=head2 IMPLEMENTATION REFERENCE
 
 The key parsers implemented in this distribution are implemented similarily
 as the authorized_keys file parser in the openssh source distribution.

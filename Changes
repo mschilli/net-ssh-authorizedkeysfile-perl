@@ -2,7 +2,7 @@
 Revision history for Perl extension Net::SSH::AuthorizedKeysFile
 ######################################################################
 
-0.12  (not yet released)
+0.12  (2010/02/22)
     (ms) Added test cases with weird keys
     (ms) Deleting undefined/empty options to avoid warnings
 

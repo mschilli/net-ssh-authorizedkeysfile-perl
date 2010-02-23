@@ -8,7 +8,6 @@ lib/Net/SSH/AuthorizedKeysFile.pm
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
-Net-SSH-AuthorizedKeysFile-0.10.tar.gz
 README
 t/001Basic.t
 t/002Ssh-2.t
@@ -18,6 +17,7 @@ t/005Empty.t
 t/006Broken.t
 t/007ssh-1.t
 t/008ssh-2.t
+t/009weird-keys.t
 t/canned/ak-broken.txt
 t/canned/ak-comments.txt
 t/canned/ak-manpage.txt
