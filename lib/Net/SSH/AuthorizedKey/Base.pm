@@ -186,6 +186,10 @@ sub options_parse {
 
     DEBUG "Parsing options: [$string]";
     my @options = parse_line(qr/\s*,\s*/, 0, $string);
+
+      # delete empty/undefined fields
+    @options = grep { defined $_ and length $_ } @options;
+
     DEBUG "Parsed options: ", join(' ', map { "[$_]" } @options);
 
     for my $option (@options) {
