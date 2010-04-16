@@ -110,76 +110,18 @@ __END__
 
 =head1 NAME
 
-Net::SSH::AuthorizedKey::SSH1 - SSH version 1 public keys
-
-=head1 SYNOPSIS
-
-    use Net::SSH::AuthorizedKey::SSH1;
-
-      # Either parse a string (without leading whitespace or comments):
-    my $pubkey = Net::SSH::AuthorizedKey::SSH1->parse( $string );
-
-      # ... or create an object yourself:
-    my $pubkey = Net::SSH::AuthorizedKey->new(
-        options  => { from                  => 'foo@bar.com', 
-                      "no-agent-forwarding" => 1 },
-        key      => "123....890",
-        keylen   => 1024,
-        exponent => 35,
-        type     => "ssh-1",
-    );
+Net::SSH::AuthorizedKey::SSH1 - Net::SSH::AuthorizedKey subclass for ssh-1
 
 =head1 DESCRIPTION
 
-Net::SSH::AuthorizedKey::SSH1 objects hold ssh version 1 public keys,
-typically extracted from an authorized_keys file. 
-
-The C<parse()> method takes a line from an authorized_keys file (leading
-whitespace and comments need to be cleaned up beforehand), parses the
-data, and returns a Net::SSH::AuthorizedKey::SSH1 object which offers
-accessors for all relevant fields and a as_string() method to assemble 
-it back together as a string.
-
-Net::SSH::AuthorizedKey::SSH1 is a subclass of Net::SSH::AuthorizedKey::Base,
-which offers methods like error() and helpers to control key option 
-settings. 
-
-=head2 FIELDS
-
-All of the following fields are available via accessors:
-
-=over 4
-
-=item C<type>
-
-Type of ssh key, usually C<"ssh-1">.
-
-=item C<key>
-
-Public key, either a long number (ssh-1) or a line of alphanumeric
-characters.
-
-=item C<keylen>
-
-Length of the key in bit (e.g. 1024).
-
-=item C<exponent>
-
-Two-digit number in front of the key in ssh-1 authorized_keys lines.
-
-=item C<options>
-
-Returns a reference to a hash with options key/value pairs, listed in 
-front of the key.
-
-=back
+See Net::SSH::AuthorizedKey.
 
 =head1 LEGALESE
 
-Copyright 2005-2009 by Mike Schilli, all rights reserved.
+Copyright 2005 by Mike Schilli, all rights reserved.
 This program is free software, you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
 =head1 AUTHOR
 
-Mike Schilli <m@perlmeister.com>
+2005, Mike Schilli <m@perlmeister.com>

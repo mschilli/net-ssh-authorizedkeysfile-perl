@@ -142,79 +142,11 @@ __END__
 
 =head1 NAME
 
-Net::SSH::AuthorizedKey - Holds a single line of the authorized_keys file
-
-=head1 SYNOPSIS
-
-    use Net::SSH::AuthorizedKey;
-
-    my $akf = Net::SSH::AuthorizedKey->new(
-        options  => { from => 'foo@bar.com', "no-agent-forwarding" },
-        key      => "123....890",
-        keylen   => 1024,
-        exponent => 35,
-        type     => "ssh-1",
-        email    => 'issuer@issuer.com',
-    );
+Net::SSH::AuthorizedKey::SSH2 - Net::SSH::AuthorizedKey subclass for ssh-2
 
 =head1 DESCRIPTION
 
-Net::SSH::AuthorizedKey objects holds key lines from ssh's authorized_keys
-files. They just provide getter/setter methods.
-
-=head1 METHODS
-
-=over 4
-
-=item C<option>
-
-Get/set an option. Note that options can be either binary or carry a string:
-
-        # Set "no-agent-forwarding" option
-    $ak->option("no-agent-forwarding", 1);
-
-        # Check if no-agent-forwarding option is set
-    if($ak->option("no-agent-forwarding")) {
-        # ...
-    }
-
-        # Set the from option to 'from="a@b.com"'
-    $ak->option(from => 'a@b.com');
-
-        # Get the value of the 'from' option
-    my $val = $ak->option("from");
-
-=item C<option_delete>
-
-Remove an option completely. C<$ak-E<gt>option_delete("from")> will remove
-the C<from> option from the key meta info.
-
-=item C<type>
-
-Type of ssh key, either C<"ssh-1"> or C<"ssh-2">.
-
-=item C<email>
-
-Email address of the person who created the key. (Different from 
-the "from" option).
-
-=item C<key>
-
-Public key, either a long number (ssh-1) or a line of alphanumeric
-characters.
-
-=item C<keylen>
-
-Length of the key in bit (e.g. 1024).
-
-=item C<exponent>
-
-Two-digit number in front of the key in ssh-1 keys.
-
-=back
-
-Calling a method will return C<undef> if the corresponding entry doesn't
-exist in the key meta data.
+See Net::SSH::AuthorizedKey.
 
 =head1 LEGALESE
 
