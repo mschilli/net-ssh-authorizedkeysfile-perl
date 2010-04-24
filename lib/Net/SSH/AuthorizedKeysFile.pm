@@ -1,13 +1,15 @@
 ###########################################
 package Net::SSH::AuthorizedKeysFile;
 ###########################################
+use strict;
+use warnings;
 use Log::Log4perl qw(:easy);
 use Text::ParseWords;
 use Net::SSH::AuthorizedKey;
 use Net::SSH::AuthorizedKey::SSH1;
 use Net::SSH::AuthorizedKey::SSH2;
 
-our $VERSION = "0.12";
+our $VERSION = "0.13";
 
 ###########################################
 sub new {
@@ -15,15 +17,70 @@ sub new {
     my($class, @options) = @_;
 
     my $self = {
-        file   => "$ENV{HOME}/.ssh/authorized_keys",
-        keys   => [],
-        strict => 0,
+        default_file        => "$ENV{HOME}/.ssh/authorized_keys",
+        strict              => 0,
+        abort_on_error      => 0,
+        append              => 0,
+        ridiculous_line_len => 100_000,
         @options,
     };
 
     bless $self, $class;
 
+      # We allow keys to be set in the constructor
+    my $keys = $self->{keys} if exists $self->{keys};
+
+    $self->reset();
+
+    $self->{keys} = $keys if defined $keys;
+
     return $self;
+}
+
+###########################################
+sub sanity_check {
+###########################################
+    my($self, $file) = @_;
+
+    $self->{file} = $file if defined $file;
+    $self->{file} = $self->{default_file} if !defined $self->{file};
+
+    my $result = undef;
+
+    my $fh;
+
+    if(! open $fh, "<$self->{file}") {
+        ERROR "Cannot open file $self->{file}";
+        return undef;
+    }
+
+    while(
+      defined(my $rc = 
+              sysread($fh, my $chunk, $self->{ridiculous_line_len}))) {
+        if($rc < $self->{ridiculous_line_len}) {
+            $result = 1;
+            last;
+        }
+
+        if(index( $chunk, "\n" ) >= 0) {
+              # contains a newline, looks good
+            next;
+        }
+
+          # we've got a line that's between ridiculous_line_len and
+          # 2*ridiculous_line_len characters long. Pull the plug.
+        $self->error("File $self->{file} contains insanely long lines " .
+                     "(> $self->{ridiculous_line_len} chars");
+        last;
+    }
+
+DONE:
+    close $fh;
+
+    if(!$result) {
+        ERROR "Sanity check of file $self->{file} failed";
+    }
+    return $result;
 }
 
 ###########################################
@@ -35,53 +92,118 @@ sub keys {
 }
 
 ###########################################
-sub read {
+sub reset {
 ###########################################
-    my($self, $file) = @_;
+    my($self) = @_;
 
-    $self->{file} = $file if defined $file;
+    $self->{keys}    = [];
+    $self->{content} = "";
+    $self->{error}   = undef;
+}
 
-    my $line = 0;
+###########################################
+sub content {
+###########################################
+    my($self, $new_content) = @_;
 
-    DEBUG "Reading in $self->{file}";
+    if( defined $new_content ) {
+       $self->reset();
+       $self->{content} = $new_content;
+    }
 
-    open FILE, "<$self->{file}" or LOGDIE "Cannot open $self->{file}";
+    return $self->{content};
+}
 
-    while(<FILE>) { 
+###########################################
+sub line_parse {
+###########################################
+    my($self, $line, $line_number) = @_;
 
-        chomp;
+    chomp $line;
 
-        s/^\s+//;     # Remove leading blanks
-        s/\s+$//;     # Remove trailing blanks
-        next if /^$/; # Ignore empty lines
-        next if /^#/; # Ignore comment lines
-        $line++;
+    DEBUG "Parsing line [$line]";
 
-        DEBUG "Analyzing line [$_]";
+    $self->error( "" );
 
-        my $line_string = $_;
+    my $pk = Net::SSH::AuthorizedKey->parse( $line );
 
-        my $pk = Net::SSH::AuthorizedKey->parse( $line_string );
+    if( !$pk ) {
+        my $msg = "[$line] rejected by all parsers";
+        WARN $msg;
+        $self->error($msg);
+        return undef;
+    }
 
-        if($pk and $pk->sanity_check()) {
-            push @{ $self->{keys} }, $pk;
+    if(! $self->{strict} or $pk->sanity_check()) {
+        return $pk;
+    }
+
+    WARN "Key [$line] failed sanity check";
+
+    if($self->{strict}) {
+        $self->error( $pk->error() );
+        return undef;
+    }
+
+      # Key is corrupted, but ok in non-strict mode
+    return $pk;
+}
+
+###########################################
+sub parse {
+###########################################
+    my($self) = @_;
+
+    $self->{keys}  = [];
+    $self->{error} = "";
+
+    my $line_number = 0;
+
+    for my $line (split /\n/, $self->{content}) {
+        $line_number++;
+
+        $line =~ s/^\s+//;     # Remove leading blanks
+        $line =~ s/\s+$//;     # Remove trailing blanks
+        next if $line =~ /^$/; # Ignore empty lines
+        next if $line =~ /^#/; # Ignore comment lines
+
+        my $key = $self->line_parse($line, $line_number);
+
+        if( defined $key ) {
+            push @{$self->{keys}}, $key;
         } else {
-            WARN "Key [$line_string] failed sanity check -- ignored";
-            if($self->{strict}) {
-                WARN "Strict mode on: Abort";
-                if(defined $pk) {
-                    $self->error( $pk->error() );
-                } else {
-                    $self->error( "Invalid line: [$line_string] " .
-                                  "rejected by all parsers" );
-                }
-                close FILE;
+            if($self->{abort_on_error}) {
+                $self->error("Line $line_number: " . $self->error());
                 return undef;
             }
         }
     }
 
-   close FILE;
+    return 1;
+}
+
+###########################################
+sub read {
+###########################################
+    my($self, $file) = @_;
+
+    $self->reset();
+
+    $self->{file} = $file if defined $file;
+    $self->{file} = $self->{default_file} if !defined $self->{file};  
+    $self->{content} = "";
+
+    DEBUG "Reading in $self->{file}";
+
+    open FILE, "<$self->{file}" or LOGDIE "Cannot open $self->{file}";
+
+    while(<FILE>) {
+        $self->{content} .= $_;
+    }
+
+    close FILE;
+
+   return $self->parse();
 }
 
 ###########################################
@@ -118,12 +240,21 @@ sub save {
 }
 
 ###########################################
+sub append {
+###########################################
+    my($self, $key) = @_;
+
+    $self->{append} = 1;
+}
+
+###########################################
 sub error {
 ###########################################
     my($self, $text) = @_;
 
     if(defined $text) {
         $self->{error} = $text;
+        ERROR "$text";
     }
 
     return $self->{error};
@@ -184,9 +315,14 @@ faulty lines and only gobble up keys that either one of the two parsers
 accepts. If you want it to be stricter, set
 
     Net::SSH::AuthorizedKeysFile->new( file   => "authkeys_file",
-                                       strict => 1 );
+                                       abort_on_error => 1 );
 
-and read will immediately abort after the first faulty line.
+and read will immediately abort after the first faulty line. Also, 
+the key parsers are fairly lenient in default mode. Adding
+
+    strict => 1
+
+adds sanity checks before a key is accepted.
 
 =item C<read>
 
@@ -194,6 +330,16 @@ Reads in the file defined by new(). By default, strict mode is off and
 read() will silently ignore faulty lines. If it's on (see new() above),
 read() will immediately abort after the first faulty line. A textual
 description of the last error will be available via error().
+
+=item C<content>
+
+Contains the original file content, read by C<read()> earlier. Can be
+used to set arbitrary content:
+
+    $keysfile->content( "some\nrandom\nlines\n" );
+
+and have C<parse()> operate on a string instead of an actual file 
+this way.
 
 =item C<keys>
 
@@ -215,6 +361,12 @@ name parameter, so calling C<$akf-E<gt>save("foo.txt")> will save the data
 in the file "foo.txt" instead of the file the data was read from originally.
 Returns 1 if successful, and undef on error. In case of an error, error()
 contains a textual error description.
+
+=item C<sanity_check>
+
+Run a sanity check on the currently selected authorized_keys file. If
+it contains insanely long lines, then parsing with read() (and potential
+crashes because of out-of-memory errors) should be avoided.
 
 =item C<error>
 

@@ -4,6 +4,7 @@ Revision history for Perl extension Net::SSH::AuthorizedKeysFile
 
 0.13  (not yet released)
     (ms) Moved ssh1 and ssh2 docs to base class.
+    (ms) Added sanity check for files with extreme line lengths
 
 0.12  (2010/02/22)
     (ms) Added test cases with weird keys

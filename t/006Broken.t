@@ -27,11 +27,11 @@ is($rc, 1, "read ok on broken authorized_keys (no strict)");
 
 $ak = Net::SSH::AuthorizedKeysFile->new(
     file   => "$cdir/ak-broken.txt",
-    strict => 1,
+    abort_on_error => 1,
 );
 $rc = $ak->read();
 is($rc, undef, "read fail on broken authorized_keys (strict)");
-is($ak->error(), "Invalid line: [ene mene meck] rejected by all parsers", 
+is($ak->error(), "Line 1: [ene mene meck] rejected by all parsers",
                  "error message");
 
 $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak.txt");
@@ -40,11 +40,12 @@ $rc = $ak->read();
 is($rc, 1, "read ok on ok authorized_keys");
 
 $ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-broken.txt",
-                                        strict => 1);
+                                        strict => 1,
+                                        abort_on_error => 1);
 $rc = $ak->read();
 
 is($rc, undef, "read fail on broken authorized_keys");
-is($ak->error(), "Invalid line: [ene mene meck] rejected by all parsers", 
+is($ak->error(), "Line 1: [ene mene meck] rejected by all parsers",
                  "error message");
 
 $ak = Net::SSH::AuthorizedKey->parse( 
