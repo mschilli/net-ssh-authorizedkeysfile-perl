@@ -260,6 +260,44 @@ sub error {
     return $self->{error};
 }
 
+###########################################
+sub ssh_dir {
+###########################################
+    my($self, $user) = @_;
+
+    if(!defined $user) {
+        my $uid = $>;
+        $user = getpwuid($uid);
+        if(!defined $user) {
+            ERROR "getpwuid of $uid failed ($!)";
+            return undef;
+        }
+    }
+
+    my @pwent = getpwnam($user);
+
+    if(! defined $pwent[0]) {
+        ERROR "getpwnam of $user failed ($!)";
+        return undef;
+    }
+
+    my $home = $pwent[7];
+
+    return File::Spec->catfile($home, ".ssh");
+}
+
+###########################################
+sub path_locate {
+###########################################
+    my($self, $user) = @_;
+
+    my $ssh_dir = $self->ssh_dir($user);
+
+    return undef if !defined $ssh_dir;
+
+    return File::Spec->catfile($ssh_dir, "authorized_keys");
+}
+
 1;
 
 __END__
@@ -367,6 +405,18 @@ contains a textual error description.
 Run a sanity check on the currently selected authorized_keys file. If
 it contains insanely long lines, then parsing with read() (and potential
 crashes because of out-of-memory errors) should be avoided.
+
+=item C<ssh_dir( [$user] )>
+
+Locate the .ssh dir of a given user. If no user name is given, ssh_dir will
+look up the .ssh dir of the effective user. Typically returns something like
+"/home/gonzo/.ssh".
+
+=item C<path_locate( [$user] )>
+
+Locate the authorized_keys file of a given user. Typically returns something 
+like "/home/gonzo/.ssh/authorized_keys". See C<ssh_dir()> for how the 
+containing directory is located with and without a given user name.
 
 =item C<error>
 
