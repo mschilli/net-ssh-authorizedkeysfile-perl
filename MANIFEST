@@ -18,6 +18,7 @@ t/006Broken.t
 t/007ssh-1.t
 t/008ssh-2.t
 t/009weird-keys.t
+t/010sanity.t
 t/canned/ak-broken.txt
 t/canned/ak-comments.txt
 t/canned/ak-manpage.txt

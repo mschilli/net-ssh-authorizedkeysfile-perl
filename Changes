@@ -7,6 +7,8 @@ Revision history for Perl extension Net::SSH::AuthorizedKeysFile
     (ms) Added sanity check for files with extreme line lengths
     (ms) Added convenience methods path_locate() and ssh_dir() to locate 
          a user's .ssh dir and authorized_keys file on disk.
+    (ms) Added fingerprint method to parser base class, determining
+         a key's functional uniqueness.
 
 0.12  (2010/02/22)
     (ms) Added test cases with weird keys

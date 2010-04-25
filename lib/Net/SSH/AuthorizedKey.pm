@@ -87,6 +87,12 @@ Reads in a single text line containing a ssh-1 or ssh-2 key.
 Returns a Net::SSH::AuthorizedKey::SSH1 or a Net::SSH::AuthorizedKey::SSH2
 object, or C<undef> in case of an error.
 
+=item C<fingerprint()>
+
+Returns a MD5 hex hash of the parsed key. The hash is unique for functionally 
+identical keys. Fields not contributing to the key's functional uniqueness
+are ignored.
+
 =item C<error()>
 
 Returns the last parsing error encountered as a text string.

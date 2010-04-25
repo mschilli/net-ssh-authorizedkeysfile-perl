@@ -11,7 +11,7 @@ use File::Copy;
 use Log::Log4perl qw(:easy);
 # Log::Log4perl->easy_init($DEBUG);
 
-use Test::More tests => 11;
+use Test::More tests => 12;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 
 my $tdir = "t";
@@ -64,3 +64,5 @@ $ak4->read();
 
 is($keys[1]->option("From"), undef, "Removed from");
 #print $ak4->as_string();
+
+is($keys[1]->fingerprint(), "39db833dbf737ea9b95e378bd43a4008", "fingerprint");

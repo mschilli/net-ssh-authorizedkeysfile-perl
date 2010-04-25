@@ -21,6 +21,8 @@ WriteMakefile(
         Log::Log4perl    => 1,
         File::Temp       => 0,
         File::Copy       => 0,
+        Digest::MD5      => 0,
+        File::Spec       => 0,
     }, # e.g., Module::Name => 1.1
     $ExtUtils::MakeMaker::VERSION >= 6.50 ? (%$meta_merge) : (),
     'EXE_FILES'    => [ 'eg/authorized-keys-test' ],

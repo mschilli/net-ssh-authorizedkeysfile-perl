@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use Log::Log4perl qw(:easy);
 use Text::ParseWords;
+use Digest::MD5 qw(md5_hex);
 
   # Accessors common for both ssh1 and ssh2 keys
 our @accessors = qw(options key type error email comment);
@@ -207,6 +208,19 @@ sub options_parse {
             $option_hash->{$key} = $value;
         }
     }
+}
+
+###########################################
+sub fingerprint {
+###########################################
+    my($self) = @_;
+
+    my $data = $self->options();
+
+    my $string = join '', map { $_ => $data->{$_} } sort keys %$data;
+    $string .= $self->key();
+
+    return md5_hex($string);
 }
 
 ##################################################
