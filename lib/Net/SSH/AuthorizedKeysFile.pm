@@ -9,7 +9,7 @@ use Net::SSH::AuthorizedKey;
 use Net::SSH::AuthorizedKey::SSH1;
 use Net::SSH::AuthorizedKey::SSH2;
 
-our $VERSION = "0.13";
+our $VERSION = "0.14";
 
 ###########################################
 sub new {
