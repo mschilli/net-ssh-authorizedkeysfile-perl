@@ -8,7 +8,7 @@ use Log::Log4perl qw(:easy);
 
 # Log::Log4perl->easy_init($DEBUG);
 
-plan tests => 2;
+plan tests => 3;
 
 my $t2key = 'ssh-rsa AAAAB3NzaCKK7696k6U= bar@foo.ms.com';
 
@@ -33,3 +33,8 @@ $pk->option_delete( "no-pty");
 
 like $pk->as_string(), qr/no-port-forwarding,no-agent-forwarding,no-x11-forwarding,no-user-rc,environment="moo",from="here,there",permitopen="oink",tunnel="yes, please" ssh-rsa/, "options in order after delete";
 
+my $t3key = 'from="a,b",no-pty,environment="moo",no-agent-forwarding ssh-rsa AAAAB3NzaCKK7696k6U= bar@foo.ms.com';
+
+  # specific
+$pk = Net::SSH::AuthorizedKey::SSH2->parse($t3key);
+like $pk->as_string(), qr/from="a,b",no-pty,environment="moo",no-agent-forwarding ssh-rsa/;

@@ -4,6 +4,7 @@ Revision history for Perl extension Net::SSH::AuthorizedKeysFile
 
 0.14  (not yet released)
     (ms) Preserve order of options
+    (ms) Bug fix: Binary options no longer expand as xxx="1" in as_string()
 
 0.13  (2010/04/25)
     (ms) Moved ssh1 and ssh2 docs to base class.
