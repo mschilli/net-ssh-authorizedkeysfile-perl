@@ -42,7 +42,8 @@ sub new {
     my($class, %options) = @_;
 
     my $self = {
-        error => "(no error)",
+        error        => "(no error)",
+        option_order => [],
         %options,
     };
 
@@ -78,11 +79,15 @@ sub option {
     }
 
     if(defined $value) {
+
+        $self->option_delete( $key );
+
         if($option_type eq "s") {
             $self->{options}->{$key} = $value;
         } else {
             $self->{options}->{$key} = undef;
         }
+        push @{ $self->{option_order} }, $key;
     }
 
     return $self->{options}->{$key};
@@ -95,6 +100,9 @@ sub option_delete {
 
     $key = lc $key;
 
+    @{ $self->{option_order} } = 
+        grep { $_ ne $key } @{ $self->{option_order} };
+
     delete $self->{options}->{$key};
 }
 
@@ -106,7 +114,7 @@ sub options_as_string {
     my $string = "";
     my @parts  = ();
 
-    for my $option ( keys %{ $self->{options} } ) {
+    for my $option ( @{ $self->{option_order} } ) {
         if(defined $self->{options}->{$option}) {
             if(ref($self->{options}->{$option}) eq "ARRAY") {
                 for (@{ $self->{options}->{$option} }) {
