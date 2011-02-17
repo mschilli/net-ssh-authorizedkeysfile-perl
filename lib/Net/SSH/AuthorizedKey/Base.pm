@@ -194,12 +194,15 @@ sub parse {
     # No key found. Probably there are options in front of the key.
     # By the way: the openssh-5.x parser doesn't allow escaped 
     # backslashes (\\), so we don't either.
-    (my $key_string = $string) =~ s/^(
-                                  (?:"(?:\\"|.)*?)"|
-                                  \S
-                                )+
-                               //x;
-    my $options_string =  $&;
+    my $rc = (
+        (my $key_string = $string) =~ 
+                      s/^((?:
+                           (?:"(?:\\"|.)*?)"|
+                           \S
+                          )+
+                         )
+                       //x );
+    my $options_string = ($rc ? $1 : "");
     $key_string        =~ s/^\s+//;
 
     DEBUG "Trying line with options stripped: [$key_string]";
