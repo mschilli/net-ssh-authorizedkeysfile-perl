@@ -10,7 +10,7 @@ use Log::Log4perl qw(:easy);
 use File::Copy;
 # Log::Log4perl->easy_init($DEBUG);
 
-use Test::More tests => 10;
+use Test::More tests => 14;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 
 my $tdir = "t";
@@ -53,3 +53,15 @@ $ak->read();
 is($keys[0]->key(), "123", "modified key");
 is($keys[1]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj234", "unmodified key");
 
+# ECDSA support
+
+$ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-ecdsa.txt");
+$ak->read();
+
+@keys = $ak->keys();
+
+is($keys[0]->type(), "ssh-2", "type"); # ecdsa-sha2-nistp521
+is($keys[1]->type(), "ssh-2", "type");
+
+is($keys[0]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj234", "key");
+is($keys[1]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj234", "key");

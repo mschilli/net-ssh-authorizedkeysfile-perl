@@ -10,7 +10,7 @@ use Log::Log4perl qw(:easy);
   # No additional options, only global ones
 our %VALID_OPTIONS = ();
 
-our $KEYTYPE_REGEX = qr/rsa|dsa|ssh-rsa|ssh-dss/;
+our $KEYTYPE_REGEX = qr/rsa|dsa|ssh-rsa|ssh-dss|ecdsa-\S+/;
 
 our @REQUIRED_FIELDS = qw(
     encryption

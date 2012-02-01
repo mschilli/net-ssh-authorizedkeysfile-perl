@@ -22,6 +22,7 @@ t/010sanity.t
 t/011order.t
 t/canned/ak-broken.txt
 t/canned/ak-comments.txt
+t/canned/ak-ecdsa.txt
 t/canned/ak-manpage.txt
 t/canned/ak-mixed.txt
 t/canned/ak-ssh1-weirdo.txt
