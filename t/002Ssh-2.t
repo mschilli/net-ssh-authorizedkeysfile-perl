@@ -10,7 +10,7 @@ use Log::Log4perl qw(:easy);
 use File::Copy;
 # Log::Log4perl->easy_init($DEBUG);
 
-use Test::More tests => 14;
+use Test::More tests => 16;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 
 my $tdir = "t";
@@ -65,3 +65,14 @@ is($keys[1]->type(), "ssh-2", "type");
 
 is($keys[0]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj234", "key");
 is($keys[1]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj234", "key");
+
+# Ed25519 support
+
+$ak = Net::SSH::AuthorizedKeysFile->new(file => "$cdir/ak-ed25519.txt");
+$ak->read();
+
+@keys = $ak->keys();
+
+is($keys[0]->type(), "ssh-2", "type"); # ed25519
+
+is($keys[0]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj234", "key");
