@@ -2,6 +2,9 @@
 Revision history for Perl extension Net::SSH::AuthorizedKeysFile
 ######################################################################
 
+0.17  (12/22/2014)
+    (ms) David Leon Gil added support for Ed25519 keys
+
 0.16  (01/31/2012)
     (ms) Added support for ecdsa-* ssh-2 keys, requested by
          Christian Ruppert.
