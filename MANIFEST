@@ -20,6 +20,7 @@ t/008ssh-2.t
 t/009weird-keys.t
 t/010sanity.t
 t/011order.t
+t/012l4p.t
 t/canned/ak-broken.txt
 t/canned/ak-comments.txt
 t/canned/ak-ecdsa.txt
