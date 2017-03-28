@@ -9,7 +9,7 @@ use Net::SSH::AuthorizedKey;
 use Net::SSH::AuthorizedKey::SSH1;
 use Net::SSH::AuthorizedKey::SSH2;
 
-our $VERSION = "0.17";
+our $VERSION = "0.18";
 
 ###########################################
 sub new {
@@ -252,9 +252,13 @@ sub error {
 ###########################################
     my($self, $text) = @_;
 
+
     if(defined $text) {
         $self->{error} = $text;
-        ERROR "$text";
+
+        if(length $text) {
+            ERROR "$text";
+        }
     }
 
     return $self->{error};

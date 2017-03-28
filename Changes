@@ -2,6 +2,11 @@
 Revision history for Perl extension Net::SSH::AuthorizedKeysFile
 ######################################################################
 
+0.18  (03/27/2017)
+    (ms) L. Alberto Giménez reported empty print lines in case of 
+         Net::SSH::AuthorizedKeysFile running with Log::Log4perl
+         enabled. Fixed.
+
 0.17  (12/22/2014)
     (ms) David Leon Gil added support for Ed25519 keys
 
