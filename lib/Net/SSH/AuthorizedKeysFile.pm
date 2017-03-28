@@ -123,8 +123,6 @@ sub line_parse {
 
     DEBUG "Parsing line [$line]";
 
-    $self->error( "" );
-
     my $pk = Net::SSH::AuthorizedKey->parse( $line );
 
     if( !$pk ) {
