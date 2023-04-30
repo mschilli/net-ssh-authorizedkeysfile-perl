@@ -10,7 +10,41 @@ use Log::Log4perl qw(:easy);
   # No additional options, only global ones
 our %VALID_OPTIONS = ();
 
-our $KEYTYPE_REGEX = qr/rsa|dsa|ssh-rsa|ssh-dss|ssh-ed25519|ecdsa-\S+/;
+# This regex is verbose to ease grep for SSH key types.
+our $KEYTYPE_REGEX = qr{\b(?:
+	# SSH 1 really
+	rsa|dsa
+	# SSH 2
+	# Negative lookahead used to avoid partial match
+	|ecdsa-sha2-nistp256(?!-cert-v01\@openssh.com)
+	|ecdsa-sha2-nistp384(?!-cert-v01\@openssh.com)
+	|ecdsa-sha2-nistp521(?!-cert-v01\@openssh.com)
+	|rsa-sha2-256 # hostkey, but might need to validate
+	|rsa-sha2-512 # hostkey, but might need to validate
+	|ssh-dss(?!-cert-v01\@openssh.com)
+	|ssh-ed25519(?!-cert-v01\@openssh.com)
+	|ssh-ed448(?!-cert-v01\@openssh.com)
+	|ssh-rsa(?!-cert-v01\@openssh.com)
+	# Certs
+	|ecdsa-sha2-nistp256-cert-v01\@openssh.com
+	|ecdsa-sha2-nistp384-cert-v01\@openssh.com
+	|ecdsa-sha2-nistp521-cert-v01\@openssh.com
+	|rsa-sha2-256-cert-v01\@openssh.com
+	|rsa-sha2-512-cert-v01\@openssh.com
+	|ssh-dss-cert-v01\@openssh.com
+	|ssh-ed25519-cert-v01\@openssh.com
+	|ssh-ed448-cert-v01\@openssh.com
+	|ssh-rsa-cert-v01\@openssh.com
+	# Security-keys
+	|sk-ecdsa-sha2-nistp256\@openssh.com
+	|sk-ssh-ed25519\@openssh.com
+	|sk-ssh-ed448\@openssh.com
+	|webauthn-sk-ecdsa-sha2-nistp256\@openssh.com
+	# Certs with Security keys
+	|sk-ecdsa-sha2-nistp256-cert-v01\@openssh.com
+	|sk-ssh-ed25519-cert-v01\@openssh.com
+	|sk-ssh-ed448-cert-v01\@openssh.com
+	)\b}x;
 
 our @REQUIRED_FIELDS = qw(
     encryption

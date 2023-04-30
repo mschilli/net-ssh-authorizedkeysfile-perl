@@ -10,7 +10,7 @@ use Log::Log4perl qw(:easy);
 use File::Copy;
 # Log::Log4perl->easy_init($DEBUG);
 
-use Test::More tests => 16;
+use Test::More tests => 50;
 BEGIN { use_ok('Net::SSH::AuthorizedKeysFile') };
 
 my $tdir = "t";
@@ -64,7 +64,7 @@ is($keys[0]->type(), "ssh-2", "type"); # ecdsa-sha2-nistp521
 is($keys[1]->type(), "ssh-2", "type");
 
 is($keys[0]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj234", "key");
-is($keys[1]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj234", "key");
+is($keys[1]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj235", "key");
 
 # Ed25519 support
 
@@ -76,3 +76,35 @@ $ak->read();
 is($keys[0]->type(), "ssh-2", "type"); # ed25519
 
 is($keys[0]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj234", "key");
+is($keys[1]->key(), "AAAAAlkj2lkjalsdfkjlaskdfj235", "key");
+
+# Bulk key testing
+my @keytype = (
+ 'ecdsa-sha2-nistp256',
+ 'ecdsa-sha2-nistp384',
+ 'ecdsa-sha2-nistp521',
+ # SK
+ 'sk-ecdsa-sha2-nistp256',
+ 'sk-ssh-ed25519',
+ # Cert, no SK
+ 'ecdsa-sha2-nistp256-cert-v01',
+ 'ssh-dss-cert-v01',
+ 'ssh-ed25519-cert-v01',
+ 'ssh-rsa-cert-v01',
+ ## SK + cert
+ 'sk-ecdsa-sha2-nistp256-cert-v01',
+ 'sk-ssh-ed25519-cert-v01',
+);
+
+foreach my $kt (@keytype) {
+	my $f = sprintf("$cdir/ak-ssh2-%s.txt", $kt);
+	#print STDERR "$f\n";
+	my $ak = Net::SSH::AuthorizedKeysFile->new(file => $f);
+	$ak->read();
+	my @keys = $ak->keys();
+	is(scalar(@keys) > 0, 1, "non-zero $kt");
+	is($keys[0]->type(), "ssh-2", "type $kt");
+	my $enc = $keys[0]->encryption();
+	$enc =~ s/\@openssh.com$//g; # make testing easier
+	is($enc, $kt, "encryption $kt");
+}
