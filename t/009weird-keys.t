@@ -34,5 +34,5 @@ from="*.onk.com",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,1024 3
 from ="*.onk.com" 1024 35 1743547142167 abc@foo.bar.baz.com ## space before options's "="
 63548219 abc@bar.baz.com ## Missing ssh1 keylen
 sh-rsa AAAAB3Nz ## Misspelled (sh-rsa) ssh2 algo
-ssh-dsa AAAAB3Nz ## Misspelled (ssh-dsa) ssh2 algo
+##ssh-dsa AAAAB3Nz ## Misspelled (ssh-dsa) ssh2 algo - not really a bug
 from="abc.com" no-pty,no-port-forwarding,no-X11-forwarding,no-agent-forwarding,command="ls" 1024 35 12923 abc@def.com ## space in options

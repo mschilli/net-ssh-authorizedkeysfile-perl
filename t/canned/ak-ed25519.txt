@@ -1,1 +1,2 @@
 ssh-ed25519 AAAAAlkj2lkjalsdfkjlaskdfj234 foo@bar.com
+ssh-ed25519 AAAAAlkj2lkjalsdfkjlaskdfj235 bar@foo.com
